@@ -1,7 +1,27 @@
 import pytest
 
-from simbump.part import NumericPartConfig, Part
+from simbump.part import NumericPartConfig, Part, StringPartConfig
 from simbump.version import VersionConfig
+
+
+@pytest.fixture
+def prenum_config() -> NumericPartConfig:
+    return NumericPartConfig(
+        order=5,
+        required=True,
+        prefix='.',
+        start_value=1
+    )
+
+
+@pytest.fixture
+def pre_config() -> StringPartConfig:
+    return StringPartConfig(
+        order=4,
+        required=False,
+        prefix='-',
+        value_list=['alpha', 'beta', 'rc']
+    )
 
 
 @pytest.fixture

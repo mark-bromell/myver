@@ -17,3 +17,20 @@ def test_part_str(major, minor, micro):
     assert str(major) == '-3+'
     assert str(minor) == '.9'
     assert str(micro) == '.1'
+
+
+def test_numeric_part_config_next(major_config):
+    expected = str(5)
+    actual = major_config.next_value(current_value=str(4))
+    assert actual == expected
+
+
+def test_string_part_config_next(pre_config):
+    expected = 'beta'
+    actual = pre_config.next_value(current_value='alpha')
+    assert actual == expected
+
+
+def test_string_part_config_next_end(pre_config):
+    actual = pre_config.next_value(current_value='rc')
+    assert actual is None

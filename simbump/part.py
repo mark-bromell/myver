@@ -71,10 +71,12 @@ class NumericPartConfig(PartConfig):
                  children: list[PartConfig] = None,
                  start_value: int = 0):
         super().__init__(order, prefix, suffix, required, children)
-        self.start_value: int = start_value
+        self.start_value: str = str(start_value)
 
     def next_value(self, current_value: str) -> str:
-        pass
+        next_value = int(current_value)
+        next_value += 1
+        return str(next_value)
 
 
 class StringPartConfig(PartConfig):
@@ -92,12 +94,18 @@ class StringPartConfig(PartConfig):
                  suffix: str = None,
                  required: bool = False,
                  children: list[PartConfig] = None,
-                 value_list: list = None):
+                 value_list: list[str] = None):
         super().__init__(order, prefix, suffix, required, children)
-        self.value_list: list = value_list or []
+        self.value_list: list[str] = value_list or []
 
     def next_value(self, current_value: str) -> Optional[str]:
-        pass
+        current_index = self.value_list.index(current_value)
+        next_index = current_index + 1
+
+        if next_index < len(self.value_list):
+            return self.value_list[next_index]
+
+        return None
 
 
 class Part:
