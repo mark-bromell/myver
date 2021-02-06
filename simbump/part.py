@@ -53,15 +53,18 @@ class PartConfig(abc.ABC):
         """
         pass
 
+    @property
+    @abc.abstractmethod
+    def start_value(self) -> str:
+        """Get the starting value of the part.
+
+        :return: The starting vale of the part.
+        """
+        pass
+
 
 class NumericPartConfig(PartConfig):
-    """Represents the config for a version part that is a number.
-
-    :param start_value: The starting value of the number version part.
-        By default this is set to `0`. The start value will be invoked
-        in cases where a parent version part is bumped, all child
-        numeric parts must be reset.
-    """
+    """Represents the config for a version part that is a number."""
 
     def __init__(self,
                  order: int,
@@ -71,12 +74,16 @@ class NumericPartConfig(PartConfig):
                  children: list[PartConfig] = None,
                  start_value: int = 0):
         super().__init__(order, prefix, suffix, required, children)
-        self.start_value: str = str(start_value)
+        self._start_value: str = str(start_value)
 
     def next_value(self, current_value: str) -> str:
         next_value = int(current_value)
         next_value += 1
         return str(next_value)
+
+    @property
+    def start_value(self) -> str:
+        return self._start_value
 
 
 class StringPartConfig(PartConfig):
@@ -106,6 +113,10 @@ class StringPartConfig(PartConfig):
             return self.value_list[next_index]
 
         return None
+
+    @property
+    def start_value(self) -> str:
+        return self.value_list[0]
 
 
 class Part:

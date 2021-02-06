@@ -34,3 +34,21 @@ def test_string_part_config_next(pre_config):
 def test_string_part_config_next_end(pre_config):
     actual = pre_config.next_value(current_value='rc')
     assert actual is None
+
+
+def test_numeric_part_config_start_value_default(minor_config):
+    expected = str(0)
+    actual = minor_config.start_value
+    assert actual == expected
+
+
+def test_numeric_part_config_start_value_custom_start(prenum_config):
+    expected = str(1)
+    actual = prenum_config.start_value
+    assert actual == expected
+
+
+def test_string_part_config_start_value(pre_config):
+    expected = 'alpha'
+    actual = pre_config.start_value
+    assert actual == expected
