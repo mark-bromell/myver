@@ -28,5 +28,5 @@ test:
 	python -m pytest tests/
 
 coverage: clean-coverage
-	coverage run --source=simbump/ -m pytest tests/
+	coverage run --source=simbump/ --branch -m pytest tests/
 	coverage html -d htmlcov/

@@ -35,12 +35,12 @@ class PartConfig(abc.ABC):
                  prefix: str = None,
                  suffix: str = None,
                  required: bool = False,
-                 children: list[PartConfig] = None):
+                 children: dict[str, PartConfig] = None):
         self.order: int = order
         self.required: bool = required
         self.prefix: str = prefix or ''
         self.suffix: str = suffix or ''
-        self.children: list[PartConfig] = children or []
+        self.children: dict[str, PartConfig] = children or dict()
 
     @abc.abstractmethod
     def next_value(self, current_value: str) -> Optional[str]:
@@ -51,30 +51,37 @@ class PartConfig(abc.ABC):
             config type is `StringPartConfig` and the `current_value` is
             at the end of its possible range of string values.
         """
-        pass
+
+    @property
+    @abc.abstractmethod
+    def start_value(self) -> str:
+        """Get the starting value of the part.
+
+        :return: The starting vale of the part.
+        """
 
 
 class NumericPartConfig(PartConfig):
-    """Represents the config for a version part that is a number.
-
-    :param start_value: The starting value of the number version part.
-        By default this is set to `0`. The start value will be invoked
-        in cases where a parent version part is bumped, all child
-        numeric parts must be reset.
-    """
+    """Represents the config for a version part that is a number."""
 
     def __init__(self,
                  order: int,
                  prefix: str = None,
                  suffix: str = None,
-                 required: bool = False,
-                 children: list[PartConfig] = None,
+                 required: bool = True,
+                 children: dict[str, PartConfig] = None,
                  start_value: int = 0):
         super().__init__(order, prefix, suffix, required, children)
-        self.start_value: int = start_value
+        self._start_value: str = str(start_value)
 
     def next_value(self, current_value: str) -> str:
-        pass
+        next_value = int(current_value)
+        next_value += 1
+        return str(next_value)
+
+    @property
+    def start_value(self) -> str:
+        return self._start_value
 
 
 class StringPartConfig(PartConfig):
@@ -91,13 +98,23 @@ class StringPartConfig(PartConfig):
                  prefix: str = None,
                  suffix: str = None,
                  required: bool = False,
-                 children: list[PartConfig] = None,
-                 value_list: list = None):
+                 children: dict[str, PartConfig] = None,
+                 value_list: list[str] = None):
         super().__init__(order, prefix, suffix, required, children)
-        self.value_list: list = value_list or []
+        self.value_list: list[str] = value_list or []
 
     def next_value(self, current_value: str) -> Optional[str]:
-        pass
+        current_index = self.value_list.index(current_value)
+        next_index = current_index + 1
+
+        if next_index < len(self.value_list):
+            return self.value_list[next_index]
+
+        return None
+
+    @property
+    def start_value(self) -> str:
+        return self.value_list[0]
 
 
 class Part:
@@ -164,29 +181,73 @@ class Part:
         """
         return self.config.order < other.config.order
 
-    def bump(self):
-        pass
+    def bump(self, child_parts: list[str] = None) -> Part:
+        """Bump part value.
+
+        This will do a recursive call resetting each child part, and
+        each child's child part etc...
+        """
+        self.value = self.config.next_value(self.value)
+        self._reset_child(child_parts)
+        return self
+
+    @property
+    def child_key(self) -> Optional[str]:
+        """Get the key of this part's child if it has a child.
+
+        :return: The key of this part's child.
+        """
+        if self.child is None:
+            return None
+
+        child_key = None
+        for key in self.config.children:
+            if self.config.children[key].order == self.child.config.order:
+                child_key = key
+
+        return child_key
+
+    def _reset_child(self, child_parts: list[str] = None):
+        if self.child is not None:
+            if self.child.config.required is True:
+                self.child.reset(child_parts)
+            elif child_parts is not None and self.child_key in child_parts:
+                self.child.reset(child_parts)
+            else:
+                self.child = None
+
+    def reset(self, child_parts: list[str] = None):
+        """Reset part value to the start value.
+
+        Resetting the part to the start value will also make a recursive
+        call to its child, reset them values too.
+        """
+        self.value = self.config.start_value
+        self._reset_child(child_parts)
 
     def set_child(self,
-                  part_list: list[Part]) -> bool:
-        """Sets the child for this part from a list of parts.
+                  parts: dict[str, Part]) -> bool:
+        """Sets the child for this part from a dict of parts.
 
         When getting a part from a value, you will not have its child
-        straight away (if it should have one). If you have a list of
-        `Part` objects, you can find the child for this part based on
-        their configs.
+        straight away (if it should have one). If you have a dict of
+        `Part` objects, you can find the child for part based on their
+        configs.
 
         It is important to know that the child will be set to the
-        reference value of the part in the list if a child is found.
+        reference value of the part in the dict if a child is found.
 
-        :param part_list: The list of parts to look for a child.
-        :return: True if a child is found.
+        :param parts: The dict of parts to look for a child.
+        :return: True if a child is set.
         """
-        for child_config in self.config.children:
-            for part in part_list:
-                if part.config.order == child_config.order:
-                    self.child = part
-                    self.child.config = child_config
+        if self.child is None:
+            for key in parts:
+                if key in self.config.children:
+                    self.child = parts[key]
                     return True
+
+        if self.child_key in parts:
+            self.child = parts[self.child_key]
+            return True
 
         return False
