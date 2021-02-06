@@ -5,31 +5,42 @@ from simbump.version import VersionConfig
 
 
 @pytest.fixture
-def prenum_config() -> NumericPartConfig:
-    return NumericPartConfig(
-        order=5,
-        required=True,
-        prefix='.',
-        start_value=1
+def dev_config() -> StringPartConfig:
+    return StringPartConfig(
+        order=6,
+        required=False,
+        prefix='+',
+        value_list=['dev']
     )
 
 
 @pytest.fixture
-def pre_config() -> StringPartConfig:
+def prenum_config(dev_config) -> NumericPartConfig:
+    return NumericPartConfig(
+        order=5,
+        prefix='.',
+        start_value=1,
+        children={'dev': dev_config}
+    )
+
+
+@pytest.fixture
+def pre_config(prenum_config) -> StringPartConfig:
     return StringPartConfig(
         order=4,
         required=False,
         prefix='-',
+        children={'prenum': prenum_config},
         value_list=['alpha', 'beta', 'rc']
     )
 
 
 @pytest.fixture
-def micro_config() -> NumericPartConfig:
+def micro_config(pre_config, dev_config) -> NumericPartConfig:
     return NumericPartConfig(
         order=3,
-        required=True,
         prefix='.',
+        children={ 'dev': dev_config, 'pre': pre_config},
     )
 
 
@@ -37,9 +48,8 @@ def micro_config() -> NumericPartConfig:
 def minor_config(micro_config) -> NumericPartConfig:
     return NumericPartConfig(
         order=2,
-        required=True,
         prefix='.',
-        children=[micro_config],
+        children={'micro': micro_config},
     )
 
 
@@ -47,16 +57,19 @@ def minor_config(micro_config) -> NumericPartConfig:
 def major_config(minor_config) -> NumericPartConfig:
     return NumericPartConfig(
         order=1,
-        children=[minor_config],
+        children={'minor': minor_config},
     )
 
 
 @pytest.fixture
-def version_config(major_config, minor_config, micro_config) -> VersionConfig:
+def version_config(major_config, minor_config, micro_config, pre_config,
+                   prenum_config) -> VersionConfig:
     return VersionConfig({
         'major': major_config,
         'minor': minor_config,
         'micro': micro_config,
+        'pre': pre_config,
+        'prenum': prenum_config,
     })
 
 
@@ -66,7 +79,24 @@ def part_values() -> dict:
         'major': 3,
         'minor': 9,
         'micro': 1,
+        'pre': None,
+        'prenum': None,
     }
+
+
+@pytest.fixture
+def dev(dev_config) -> Part:
+    return Part(dev_config, 'dev')
+
+
+@pytest.fixture
+def prenum(prenum_config) -> Part:
+    return Part(prenum_config, 1)
+
+
+@pytest.fixture
+def pre(pre_config, prenum) -> Part:
+    return Part(pre_config, 'alpha', prenum)
 
 
 @pytest.fixture
@@ -82,8 +112,3 @@ def minor(minor_config, micro) -> Part:
 @pytest.fixture
 def major(major_config, minor) -> Part:
     return Part(major_config, 3, minor)
-
-
-@pytest.fixture
-def part_list(major, minor, micro) -> list[Part]:
-    return [major, minor, micro]
