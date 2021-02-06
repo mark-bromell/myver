@@ -190,7 +190,7 @@ class Part:
         self.value = self.config.next_value(self.value)
         self._reset_child(child_parts)
         return self
-        
+
     @property
     def child_key(self) -> Optional[str]:
         """Get the key of this part's child if it has a child.

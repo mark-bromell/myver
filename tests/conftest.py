@@ -40,7 +40,7 @@ def micro_config(pre_config, dev_config) -> NumericPartConfig:
     return NumericPartConfig(
         order=3,
         prefix='.',
-        children={ 'dev': dev_config, 'pre': pre_config},
+        children={'dev': dev_config, 'pre': pre_config},
     )
 
 
