@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from simbump.part import PartConfig, Part
+from simbump.part import Part, PartConfig
 
 
 class VersionConfig:
@@ -34,6 +34,9 @@ class Version:
             part.set_child(part_list)
 
         return sorted(part_list)
+
+    def bump(self, part: str, child_string_parts: list[str] = None):
+        pass
 
     def __str__(self):
         parts = self.parts
