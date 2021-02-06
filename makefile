@@ -21,8 +21,12 @@ clean-coverage:
 	- rm .coverage
 	- rm -rf htmlcov/
 
+lint:
+	flake8 simbump/ tests/
+
 test:
 	python -m pytest tests/
 
-lint:
-	flake8 simbump/ tests/
+coverage: clean-coverage
+	coverage run --source=simbump/ -m pytest tests/
+	coverage html -d htmlcov/
