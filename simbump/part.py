@@ -87,7 +87,7 @@ class NumericPartConfig(PartConfig):
 class StringPartConfig(PartConfig):
     """Represents the config for a version part that is a string.
 
-    :param value_list: The list of strings available for the part.
+    :param values: The list of strings available for the part.
         There should be no duplicates inside the value list. Having
         a duplicate string value could also lead to a duplicate
         overall version, which is not allowed.
@@ -99,22 +99,22 @@ class StringPartConfig(PartConfig):
                  suffix: str = None,
                  required: bool = False,
                  children: dict[str, PartConfig] = None,
-                 value_list: list[str] = None):
+                 values: list[str] = None):
         super().__init__(order, prefix, suffix, required, children)
-        self.value_list: list[str] = value_list or []
+        self.values: list[str] = values or []
 
     def next_value(self, current_value: str) -> Optional[str]:
-        current_index = self.value_list.index(current_value)
+        current_index = self.values.index(current_value)
         next_index = current_index + 1
 
-        if next_index < len(self.value_list):
-            return self.value_list[next_index]
+        if next_index < len(self.values):
+            return self.values[next_index]
 
         return None
 
     @property
     def start_value(self) -> str:
-        return self.value_list[0]
+        return self.values[0]
 
 
 class Part:

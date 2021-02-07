@@ -10,7 +10,7 @@ def dev_config() -> StringPartConfig:
         order=6,
         required=False,
         prefix='+',
-        value_list=['dev']
+        values=['dev']
     )
 
 
@@ -31,7 +31,7 @@ def pre_config(prenum_config) -> StringPartConfig:
         required=False,
         prefix='-',
         children={'prenum': prenum_config},
-        value_list=['alpha', 'beta', 'rc']
+        values=['alpha', 'beta', 'rc']
     )
 
 
