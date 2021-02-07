@@ -16,7 +16,7 @@ dev =
 ```
 
 #### Example of `.simbump.cfg` file
-This file handles how the version as a whole, and its parts are 
+This file handles how the version as a whole (and its parts) are 
 configured to work. Based on the parts discovered in `VERSION.cfg`,
 simbump can then specify the configs of each part.
 
@@ -107,7 +107,7 @@ simbump micro pre dev
 > 3.8.2-alpha.1+dev
 ```
 
-Not it is getting a bit tricky, but it brings to light
+Now it is getting a bit tricky, but it brings to light
 the way part relationships work. When bumping `micro` with `pre`, the
 `pre` will bring along its `prenum` child since it is a
 required part. Although how did we bring along `dev` with
@@ -122,8 +122,8 @@ can be a child of `prenum`.
 ```shell
 simbump --current
 > 3.8.1
-# Reads as: bump minor, with pre (as 'beta')
-simbump minor pre - beta
+# Reads as: bump minor, with pre as 'beta'
+simbump minor pre --as beta
 > 3.9.0-beta.1
 ```
 
@@ -137,16 +137,15 @@ simbump minor pre --as beta dev
 ```
 
 Sometimes you may not want to use the start value of a string part. Here
-we see that `pre` is a string part (which is implied thought its 
-`values` list of strings in the config). By providing the empty `-`
-option directly after `pre`, it will use the next argument as the value
-to se the `pre` part, in this case it is `beta`, which is skipping the
+we see that `pre` is a string part (which is implied through its 
+`values` list of strings in the config). By providing the `--as`
+option directly after `pre`, it will use that `--as` value for the `pre`
+part, in this case it is `beta`, which is skipping the
 `alhpa` value. It is important that you specify a part value that is
 valid (i.e. it is in the `values` list in the config of the part)
 
-### Removing the descendants
+## Option `--delete`
 ```shell
-# This one is simple enough
 simbump --current
 > 3.9.0-beta.1+dev
 simbump --delete pre
