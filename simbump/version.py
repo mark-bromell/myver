@@ -6,6 +6,12 @@ from simbump.part import Part, PartConfig
 
 
 class VersionConfig:
+    """Represents a version config.
+
+    :param part_configs: The configs of each of the parts of the
+        version. This is used for helping operations on the actual
+        version values.
+    """
     def __init__(self,
                  part_configs: dict[str, PartConfig] = None):
         self.part_configs: dict[str, PartConfig] = part_configs or []
