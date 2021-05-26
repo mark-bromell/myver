@@ -155,7 +155,6 @@ simbump --delete pre
 ```shell
 simbump --current
 > 3.9.0-beta.1+build.34
-# Reads as: delete pre, keep build
-simbump --delete pre build
+simbump --delete pre --keep build
 > 3.9.0+build.1
 ```
