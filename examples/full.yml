@@ -1,41 +1,44 @@
-# Put each of your part elements inside here
-parts:
+core:
+  prefix: null
 
-  # This is one of our parts, name it anything you want
-  mypart:
+  # Put each of your part elements inside here
+  parts:
 
-    # If you do not define a part value, it will use the start value if
-    # it is invoked in a bump. If a part value is null, then it will not
-    # be shown in the version.
-    value: null
+    # This is one of our parts, name it anything you want
+    mypart:
 
-    # The children of this part. If this part changes then the children
-    # will be reset to their starting point.
-    children: null
+      # If you do not define a part value, it will use the start value if
+      # it is invoked in a bump. If a part value is null, then it will not
+      # be shown in the version.
+      value: null
 
-    # Defines if the part is required to have a value. If a parent of
-    # this part is null then this part will also be null, being required
-    # is relative to a part's parent. If a parent goes from null to a
-    # value though, this required part will also go from null to its
-    # starting value automatically.
-    #
-    # Otherwise, if a part has no parents, and it is required, then it
-    # must always have a value.
-    required: true
+      # The children of this part. If this part changes then the children
+      # will be reset to their starting point.
+      children: null
 
-    # Numerics can be incremented with no limit. If numeric is false
-    # then incrementing cannot occur, and you need to have an
-    # identifiers list.
-    numeric: true
+      # Defines if the part is required to have a value. If a parent of
+      # this part is null then this part will also be null, being required
+      # is relative to a part's parent. If a parent goes from null to a
+      # value though, this required part will also go from null to its
+      # starting value automatically.
+      #
+      # Otherwise, if a part has no parents, and it is required, then it
+      # must always have a value.
+      required: true
 
-    # Since parts are numeric by default, then this is the starting
-    # point by default.
-    start: 0
+      # Numerics can be incremented with no limit. If numeric is false
+      # then incrementing cannot occur, and you need to have an
+      # identifiers list.
+      numeric: true
 
-    # List of strings that can be potential values in a part. Can only
-    # be used if the part is not numeric (numeric: false).
-    identifiers: null
+      # Since parts are numeric by default, then this is the starting
+      # point by default.
+      start: 0
 
-    # Parts may have a character prefix in order to visually separate
-    # them from previous parts, or to denote more meaning to the part.
-    prefix: null
+      # List of strings that can be potential values in a part. Can only
+      # be used if the part is not numeric (numeric: false).
+      identifiers: null
+
+      # Parts may have a character prefix in order to visually separate
+      # them from previous parts, or to denote more meaning to the part.
+      prefix: null

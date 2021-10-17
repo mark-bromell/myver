@@ -13,8 +13,8 @@
 5  prenum ──┬──o  build
             └──o  dev
 6  build ──────r  buildnum
-7  buildnum ──:
-8  dev ──:
+7  buildnum ───:
+8  dev ────────:
 
 
 
@@ -27,5 +27,5 @@
 5  prenum ──┬──o  build
             ╰──o  dev
 6  build ──────r  buildnum
-7  buildnum ──:
-8  dev ──:
+7  buildnum ───:
+8  dev ────────:

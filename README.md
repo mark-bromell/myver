@@ -14,6 +14,7 @@ parts:
       - minor
   minor:
     value: 8
+    prefix: '.'
     children:
       - micro
   micro:
@@ -24,6 +25,7 @@ parts:
       - dev
   pre:
     value: ~
+    prefix: '-'
     identifiers:
       - alpha
       - beta
@@ -32,41 +34,28 @@ parts:
       - prenum
   prenum:
     value: ~
+    prefix: '.'
     start: 1
     children:
       - build
       - dev
   build:
     value: ~
+    prefix: '+'
+    identifiers:
+      - build
     children:
-      - minor
+      - buildnum
   buildnum:
     value: ~
-    children:
-      - minor
+    prefix: '.'
+    start: 1
   dev:
     value: ~
-    children:
-      - minor
+    prefix: '+'
+    identifiers:
+      - dev
 
-```
-
-
-#### Example of `VERSION.cfg` file
-
-This file stores the version parts current values. This is also the file
-that simbump reads in order to know what parts are available in the
-version.
-```ini
-# VERSION.cfg
-major = 3
-minor = 8
-micro = 1
-pre = 
-prenum = 
-build = 
-buildnum = 
-dev = 
 ```
 
 
@@ -218,6 +207,23 @@ simbump --current
 > 3.9.0-beta.1+dev
 simbump --delete pre
 > 3.9.0
+```
+
+```shell
+simbump --current
+> 3.9.0-beta.1+build.34
+simbump --delete pre --keep build
+> 3.9.0+build.1
+```
+
+
+## Option `--add`
+
+```shell
+simbump --current
+> 3.8.1
+simbump --add pre
+> 3.8.1-alpha.1
 ```
 
 ```shell

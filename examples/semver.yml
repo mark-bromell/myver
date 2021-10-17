@@ -1,0 +1,79 @@
+# Commented out entries are implied / defaults
+
+- group: Core
+    # prefix: null
+  parts:
+    major:
+      value: 3
+      # required: true
+      # numeric: true
+      # start: 0
+      # identifiers: null
+      # prefix: null
+    minor:
+      value: 8
+      # required: true
+      # numeric: true
+      # start: 0
+      # identifiers: null
+      prefix: '.'
+    micro:
+      value: 2
+      # required: true
+      # numeric: true
+      # start: 0
+      # identifiers: null
+      prefix: '.'
+- group: Pre-releases
+  prefix: '-'
+  parts:
+    pre:
+      value: null
+      required: false
+      # numeric: false
+      # start: alpha
+      identifiers:
+        - alpha
+        - beta
+        - rc
+      # prefix: null
+    prenum:
+      value: null
+      # required: true
+      # numeric: true
+      start: 1
+      # identifiers: null
+      prefix: '.'
+- group: Metadata
+  prefix: '+'
+  parts:
+    build:
+      value: null
+      required: false
+      # numeric: false
+      # start: build
+      identifiers: 
+        - build
+      # prefix: null
+    buildnum:
+      value: null
+      # required: true
+      # numeric: true
+      start: 1
+      # identifiers: null
+      prefix: '.'
+    dev:
+      value: null
+      # required: true
+      # numeric: true
+      # start: dev
+      identifiers:
+        - dev
+      prefix: '-'
+    devnum:
+      value: null
+      # required: true
+      # numeric: true
+      start: 1
+      # identifiers: null
+      prefix: '.'
