@@ -1,5 +1,57 @@
 ## Examples
 
+### Example of `.simbump.yml` file
+
+This file handles how the version is formed. It will store the current
+values of each part, and it will also define the configuration of each
+part.
+
+```yaml
+parts:
+  major:
+    value: 3
+    children:
+      - minor
+  minor:
+    value: 8
+    children:
+      - micro
+  micro:
+    value: 1
+    children:
+      - pre
+      - build
+      - dev
+  pre:
+    value: ~
+    identifiers:
+      - alpha
+      - beta
+      - rc
+    children:
+      - prenum
+  prenum:
+    value: ~
+    start: 1
+    children:
+      - build
+      - dev
+  build:
+    value: ~
+    children:
+      - minor
+  buildnum:
+    value: ~
+    children:
+      - minor
+  dev:
+    value: ~
+    children:
+      - minor
+
+```
+
+
 #### Example of `VERSION.cfg` file
 
 This file stores the version parts current values. This is also the file
