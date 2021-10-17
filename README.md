@@ -1,5 +1,7 @@
 ## Examples
+
 #### Example of `VERSION.cfg` file
+
 This file stores the version parts current values. This is also the file
 that simbump reads in order to know what parts are available in the
 version.
@@ -15,7 +17,9 @@ buildnum =
 dev = 
 ```
 
+
 #### Example of `.simbump.cfg` file
+
 This file handles how the version as a whole (and its parts) are 
 configured to work. Based on the parts discovered in `VERSION.cfg`,
 simbump can then specify the configs of each part.
@@ -57,7 +61,9 @@ prefix = +
 values = dev
 ```
 
+
 ### Standard bumping scenarios
+
 ```shell
 simbump --current
 > 3.8.1
@@ -67,7 +73,9 @@ simbump minor
 > 3.9.0
 ```
 
+
 ### Bumping with non-required child
+
 ```shell
 simbump --current
 > 3.8.1
@@ -83,7 +91,9 @@ The `dev` part can be a child of `micro` or `prenum`, although in
 `micro`! This does not matter, we can still just specify to bump `micro`
 and bring in its non-required child of `dev`.
 
+
 ### Non-required part with a required child
+
 ```shell
 simbump --current
 > 3.8.1
@@ -98,7 +108,9 @@ but we configured `pre` to not be required, so when it is brought along
 manually with a bump, any required parts in its descendants must be
 brought along too.
 
+
 ### Non-required children and descendant chaining
+
 ```shell
 simbump --current
 > 3.8.1
@@ -118,7 +130,9 @@ valid descendant, and `dev` will chain to the final descendant of the
 final descendant of `pre` in this scenario was `prenum` - and `dev`
 can be a child of `prenum`.
 
+
 ### Manually set the value of a string part
+
 ```shell
 simbump --current
 > 3.8.1
@@ -144,7 +158,9 @@ part, in this case it is `beta`, which is skipping the
 `alhpa` value. It is important that you specify a part value that is
 valid (i.e. it is in the `values` list in the config of the part)
 
+
 ## Option `--delete`
+
 ```shell
 simbump --current
 > 3.9.0-beta.1+dev
