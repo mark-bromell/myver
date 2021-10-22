@@ -1,24 +1,39 @@
-# Refer to examples/semver-commented.yml to see this file with comments
-# that explain this example.
+# Commented out entries are implied / defaults.
+# Refer to examples/semver.yml to see this file without comments.
 
 groups:
   core:
+    # prefix: null
     children:
       - pre
       - meta
     parts:
       major:
         value: 3
+        # required: true
+        # numeric: true
+        # start: 0
+        # identifiers: null
+        # prefix: null
         children:
           - minor
       minor:
         value: 8
+        # required: true
+        # numeric: true
+        # start: 0
+        # identifiers: null
         prefix: '.'
         children:
           - patch
       patch:
         value: 2
+        # required: true
+        # numeric: true
+        # start: 0
+        # identifiers: null
         prefix: '.'
+        # children: null
   pre:
     prefix: '-'
     children:
@@ -27,32 +42,48 @@ groups:
       pre:
         value: null
         required: false
+        # numeric: false
+        # start: alpha
         identifiers:
           - alpha
           - beta
           - rc
+        # prefix: null
         children:
           - prenum
       prenum:
         value: null
+        # required: true
+        # numeric: true
         start: 1
+        # identifiers: null
         prefix: '.'
+        # children: null
   meta:
     prefix: '+'
     parts:
       build:
         value: null
         required: false
+        # numeric: false
+        # start: build
         identifiers:
           - build
+        # prefix: null
         children:
           - buildnum
       buildnum:
         value: null
+        # required: true
+        # numeric: true
         start: 1
+        # identifiers: null
         prefix: '.'
       dev:
         value: null
+        # required: true
+        # numeric: true
+        # start: dev
         identifiers:
           - dev
         prefix: '-'
@@ -61,5 +92,8 @@ groups:
       devnum:
         value: null
         required: false
+        # numeric: true
         start: 1
+        # identifiers: null
         prefix: '.'
+        # children: null
