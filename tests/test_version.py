@@ -1,4 +1,4 @@
-from simbump.version import Version
+from abump.version import Version
 
 
 def test_version_part_values(version_config, part_values):

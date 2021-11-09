@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JSON schema for abump configuration files",
+  "type": "object",
+  "definitions": {
+    "group": {
+      "description": "Holds the definition of a section of the version. This section will contain the configuration of one or many version parts.",
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "description": "The prefix string for the group of version parts.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "children": {
+          "description": "The list of groups explicitly defined as children of this group.",
+          "anyOf": [
+            {
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "parts": {
+          "description": "The collection of part configurations for a group.",
+          "type": "object",
+          "patternProperties": {
+            "^[_a-zA-Z][a-zA-Z0-9_-]*$": {
+              "$ref": "#/definitions/part"
+            }
+          },
+          "minProperties": 1
+        }
+      },
+      "required": [
+        "parts"
+      ]
+    },
+    "part": {
+      "description": "Configuration of a single version part.",
+      "type": "object",
+      "properties": {
+        "children": {
+          "description": "The list of parts explicitly defined as children of this part.",
+          "anyOf": [
+            {
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "prefix": {
+          "description": "The prefix string for the part.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "identifiers": {
+          "description": "The list of parts explicitly defined as children of this part.",
+          "anyOf": [
+            {
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "(?!null)"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "numeric": {
+          "description": "Defines if the part is numeric, which would mean it has no identifiers and it is a number that can be incremented.",
+          "type": "boolean"
+        },
+        "required": {
+          "description": "Defines if the part is required. If a part is required it means that if its parent is invoked to be in the version, then this part would also be put into the version even if it is not explicitly asked to be in the version.",
+          "type": "boolean"
+        },
+        "start": {
+          "description": "The starting value of a part, when a part is invoked out of a null state and the value of the part is not overridden, the start value is used by default.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "value": {
+          "description": "The actual value of a part.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "value"
+      ]
+    }
+  },
+  "properties": {
+    "groups": {
+      "description": "The groups of a version, holding one or many version parts.",
+      "type": "object",
+      "patternProperties": {
+        "^[_a-zA-Z][a-zA-Z0-9_-]*$": {
+          "$ref": "#/definitions/group"
+        }
+      }
+    },
+    "minProperties": 1
+  },
+  "required": [
+    "groups"
+  ]
+}

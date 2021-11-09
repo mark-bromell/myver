@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Union
 
-from simbump.part import Part, PartConfig
+from abump.part import Part, PartConfig
 
 
 class VersionConfig:

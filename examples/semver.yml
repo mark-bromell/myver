@@ -1,65 +1,105 @@
-# Refer to examples/semver-commented.yml to see this file with comments
-# that explain this example.
+# Commented out entries are implied / defaults.
+#
+# A default value for an entry means that it is that value without any
+# other entry being considered to determine the entries value.
+#
+# An implied value means that the values of other entries are affecting
+# the value of the given entry, and we imply the entry value due to the
+# value of other entries.
 
 groups:
   core:
-    children:
-      - pre
-      - meta
+    # prefix: null
+    # children: null
+
     parts:
       major:
+        children: [ minor ]
         value: 3
-        children:
-          - minor
+        # identifiers: null
+        # numeric: true
+        # prefix: null
+        # required: true
+        # start: 0
+
       minor:
+        children: [ patch ]
+        prefix: '.'
         value: 8
-        prefix: '.'
-        children:
-          - patch
+        # identifiers: null
+        # numeric: true
+        # required: true
+        # start: 0
+
       patch:
-        value: 2
         prefix: '.'
+        value: 2
+        # children: null
+        # identifiers: null
+        # numeric: true
+        # required: true
+        # start: 0
+
   pre:
     prefix: '-'
-    children:
-      - meta
+    # children: null
+
     parts:
       pre:
-        value: null
+        children: [ prenum ]
+        identifiers: [ alpha, beta, rc ]
         required: false
-        identifiers:
-          - alpha
-          - beta
-          - rc
-        children:
-          - prenum
-      prenum:
         value: null
-        start: 1
+        # numeric: false
+        # prefix: null
+        # start: alpha
+
+      prenum:
         prefix: '.'
+        start: 1
+        value: null
+        # children: null
+        # identifiers: null
+        # numeric: true
+        # required: true
+
   meta:
     prefix: '+'
+    # children: null
+
     parts:
       build:
-        value: null
+        children: [ buildnum ]
+        identifiers: [ build ]
         required: false
-        identifiers:
-          - build
-        children:
-          - buildnum
+        value: null
+        # numeric: false
+        # prefix: null
+        # start: build
+
       buildnum:
-        value: null
-        start: 1
         prefix: '.'
+        start: 1
+        value: null
+        # children: null
+        # identifiers: null
+        # numeric: true
+        # required: true
+
       dev:
-        value: null
-        identifiers:
-          - dev
+        children: [ devnum ]
+        identifiers: [ dev ]
         prefix: '-'
-        children:
-          - devnum
-      devnum:
-        value: null
         required: false
-        start: 1
+        value: null
+        # numeric: true
+        # start: dev
+
+      devnum:
         prefix: '.'
+        required: false
+        start: 2
+        value: null
+        # children: null
+        # identifiers: null
+        # numeric: true

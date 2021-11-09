@@ -1,7 +1,7 @@
 import pytest
 
-from simbump.part import NumericPartConfig, Part, StringPartConfig
-from simbump.version import VersionConfig
+from abump.part import NumericPartConfig, Part, StringPartConfig
+from abump.version import VersionConfig
 
 
 @pytest.fixture
