@@ -10,45 +10,37 @@
 groups:
   core:
     # prefix: null
-    # children: null
-
     parts:
       major:
-        children: [ minor ]
+        requires: minor
         value: 3
         # identifiers: null
         # numeric: true
         # prefix: null
-        # required: true
         # start: 0
 
       minor:
-        children: [ patch ]
+        requires: patch
         prefix: '.'
         value: 8
         # identifiers: null
         # numeric: true
-        # required: true
         # start: 0
 
       patch:
         prefix: '.'
         value: 2
-        # children: null
+        # requires: null
         # identifiers: null
         # numeric: true
-        # required: true
         # start: 0
 
   pre:
     prefix: '-'
-    # children: null
-
     parts:
       pre:
-        children: [ prenum ]
+        requires: prenum
         identifiers: [ alpha, beta, rc ]
-        required: false
         value: null
         # numeric: false
         # prefix: null
@@ -58,20 +50,16 @@ groups:
         prefix: '.'
         start: 1
         value: null
-        # children: null
+        # requires: null
         # identifiers: null
         # numeric: true
-        # required: true
 
   meta:
     prefix: '+'
-    # children: null
-
     parts:
       build:
-        children: [ buildnum ]
+        requires: buildnum
         identifiers: [ build ]
-        required: false
         value: null
         # numeric: false
         # prefix: null
@@ -81,23 +69,20 @@ groups:
         prefix: '.'
         start: 1
         value: null
-        # children: null
+        # requires: null
         # identifiers: null
         # numeric: true
-        # required: true
 
       dev:
-        children: [ devnum ]
         identifiers: [ dev ]
         prefix: '-'
-        required: false
         value: null
+        # requires: null
         # numeric: true
         # start: dev
 
       devnum:
         prefix: '.'
-        required: false
         start: 2
         value: null
         # children: null

@@ -43,9 +43,9 @@ jobs:
         run: |
           . ~/.cache/venv/bin/activate
           # stop the build if there are Python syntax errors or undefined names.
-          flake8 abump/ tests/ --select=E9,F63,F7,F82 --config .flake8
+          flake8 myver/ tests/ --select=E9,F63,F7,F82 --config .flake8
           # exit-zero treats all errors as warnings.
-          flake8 abump/ tests/ --exit-zero --config .flake8
+          flake8 myver/ tests/ --exit-zero --config .flake8
 
       - name: 'Test'
         run: |

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "JSON schema for abump configuration files",
+  "title": "JSON schema for myver configuration files",
   "type": "object",
   "definitions": {
     "group": {
@@ -17,22 +17,6 @@
               "type": "null"
             }
           ]
-        },
-        "children": {
-          "description": "The list of groups explicitly defined as children of this group.",
-          "anyOf": [
-            {
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "uniqueItems": true
         },
         "parts": {
           "description": "The collection of part configurations for a group.",
@@ -53,21 +37,16 @@
       "description": "Configuration of a single version part.",
       "type": "object",
       "properties": {
-        "children": {
-          "description": "The list of parts explicitly defined as children of this part.",
+        "requires": {
+          "description": "Defines another part this this part requires. If this value is specified, it means that the part that is required will always be set as long as this part is set.",
           "anyOf": [
             {
-              "type": "array"
+              "type": "string"
             },
             {
               "type": "null"
             }
-          ],
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "uniqueItems": true
+          ]
         },
         "prefix": {
           "description": "The prefix string for the part.",
@@ -99,10 +78,6 @@
         },
         "numeric": {
           "description": "Defines if the part is numeric, which would mean it has no identifiers and it is a number that can be incremented.",
-          "type": "boolean"
-        },
-        "required": {
-          "description": "Defines if the part is required. If a part is required it means that if its parent is invoked to be in the version, then this part would also be put into the version even if it is not explicitly asked to be in the version.",
           "type": "boolean"
         },
         "start": {

@@ -1,7 +1,7 @@
 import pytest
 
-from abump.part import NumericPartConfig, Part, StringPartConfig
-from abump.version import VersionConfig
+from myver.part import NumericPartConfig, Part, StringPartConfig
+from myver.version import VersionConfig
 
 
 @pytest.fixture
@@ -10,7 +10,7 @@ def dev_config() -> StringPartConfig:
         order=6,
         required=False,
         prefix='+',
-        values=['dev']
+        identifiers=['dev']
     )
 
 
@@ -31,7 +31,7 @@ def pre_config(prenum_config) -> StringPartConfig:
         required=False,
         prefix='-',
         children={'prenum': prenum_config},
-        values=['alpha', 'beta', 'rc']
+        identifiers=['alpha', 'beta', 'rc']
     )
 
 

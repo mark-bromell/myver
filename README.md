@@ -3,7 +3,7 @@
 Here is the fields that are available in the configuration's yaml. The
 comments in this snippet may not cover the full scope of each field and
 what it entails, so we recommend reading the [Examples](#examples)
-section to further understand how abump works, and also how to know how
+section to further understand how myver works, and also how to know how
 the configuration affects the version
 
 ```yaml
@@ -11,12 +11,6 @@ the configuration affects the version
 groups:
   # This is a group named `core`.
   core:
-    # Groups can have children just like parts can have children. In many
-    # cases children for groups do not need to be explicitly defined, letting
-    # abump implicitly assign children should be sufficient. But hey! As
-    # PEP 20 says, explicit is better than implicit.
-    children: null
-
     # Defines the prefix for the group as a whole, this prefix will override
     # the prefix of the first occurring part of the group (that is if the first
     # part of the group even has a prefix).
@@ -26,10 +20,10 @@ groups:
     parts:
       # This is one of our parts named `mypart`.
       mypart:
-        # The children of this part. This is generally used to explicitly
-        # define required children parts, implicit children may be sufficient
-        # in most cases if the children are only optional for this part.
-        children: null
+        # Defines any other part that this part requires. This means that
+        # `mypart` cannot exist without having its required part as a direct
+        # child of this part.
+        requires: null
 
         # Parts may have a character prefix in order to visually separate
         # them from previous parts, or to denote more meaning to the part.
@@ -45,15 +39,6 @@ groups:
         # and leave `identifiers` as null. This would mean you need to define
         # the string value for the part each time you want to bump with it.
         numeric: true
-
-        # Defines if the part is required to have a value. If a parent of
-        # this part is null then this part will also be null, being required
-        # is relative to a part's parent. If a parent goes from null to a
-        # value though, this required part will also go from null to its
-        # starting value automatically.
-        # Otherwise, if a part has no parents, and it is required, then it
-        # must always have a value.
-        required: true
 
         # Since parts are numeric by default, then this is the starting
         # point by default.
@@ -78,75 +63,70 @@ groups:
   core:
     parts:
       major:
+        requires: minor
         value: 3
-        children: [ minor ]
 
       minor:
-        value: 8
+        requires: patch
         prefix: '.'
-        children: [ patch ]
+        value: 8
 
       patch:
-        value: 2
         prefix: '.'
+        value: 2
 
   pre:
     prefix: '-'
     parts:
       pre:
-        value: null
-        required: false
+        requires: prenum
         identifiers: [ alpha, beta, rc ]
-        children: [ prenum ]
+        value: null
 
       prenum:
-        value: null
-        start: 1
         prefix: '.'
+        start: 1
+        value: null
 
   meta:
     prefix: '+'
     parts:
       build:
-        value: null
-        required: false
+        requires: buildnum
         identifiers: [ build ]
-        children: [ buildnum ]
+        value: null
 
       buildnum:
-        value: null
-        start: 1
         prefix: '.'
+        start: 1
+        value: null
 
       dev:
-        value: null
-        required: false
-        prefix: '-'
         identifiers: [ dev ]
-        children: [ devnum ]
+        prefix: '-'
+        value: null
 
       devnum:
-        value: null
-        required: false
-        start: 2
         prefix: '.'
+        start: 2
+        value: null
 ```
 
 ### Preamble
 
 In each of these scenarios we will show a snippet which is demonstrating
-how you may interact with abump in a terminal environment. There may
+how you may interact with myver in a terminal environment. There may
 then be a description of what is happening in the snippet demonstration
 below each snippet.
 
 ### Standard bumping scenarios
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
-abump --bump patch
+myver --bump patch
 > 3.8.3
-abump --bump minor
+myver --bump minor
 > 3.9.0
 ```
 
@@ -154,63 +134,61 @@ As you can see, we do not need to specify the group that a part is in.
 Grouping in this example is strategic, which we discuss in the
 [Prefix priority](#prefix-priority) scenario.
 
-### Bumping with optional child
+### Bumping with non-required child
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
-abump --bump patch dev
+myver --bump patch dev
 > 3.8.3+dev
 ```
 
-In this example we show how the part ordering in the config of an
-optional part can be dynamic if it is the child of multiple parts.
-The `dev` part can be a child of the `core` group or the `pre` group,
-this is because both `core` and `pre` have the `meta` group as a child,
-and `dev` is inside the `meta` group.
+In this example we show how the part ordering matters in the config. We
+can see that the `dev` part is configured after the `patch` part, and
+the `patch` part does not require any other part. This means that `dev`
+is a valid child for the `patch` part.
 
 ```shell
-abump --current
+myver --current
 > 3.8.3+dev
-abump --bump patch
+myver --bump patch
 > 3.8.4
 ```
 
-It is also important to keep in mind that optional children will be
-removed when its parent is bumped, and you do not ask to keep the
-optional part. In the above example we bump `patch` and the `dev` part
-gets removed, if we wanted to have the `dev` part in the bumped version
-then we would have to be more explicit and use `abump --bump patch dev`.
+It is also important to keep in mind that non-required child parts will
+be removed when its parent is bumped if you do not ask to keep the child
+part. In the above example we bump `patch` and the `dev` part gets
+removed, if we wanted to have the `dev` part in the bumped version then
+we would have to be more explicit and use `myver --bump patch dev`.
 
-### Optional part with a required child
+### Part with a required child
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
-abump --bump patch pre
+myver --bump patch pre
 > 3.8.3-alpha.1
 ```
 
 We see that specifying `pre` to be brought along with the bump of
-`patch`, also brings along `prenum`. By default, every part is required,
-but we configured `pre` to not be required, so when it is brought along
-manually with a bump, any required parts in its descendants must be
-brought along too.
+`patch`, also brings along `prenum`. This is because `prenum` is
+configured to be required by `pre`.
 
-Also note that having and empty optional part, and attempting to bump it
-will start it at its starting value, and it will bring along any of its
-required children. A starting value for a string part is the first value
-in the list of its `identifiers`. In this case we see that `pre` starts
-with the value of `alpha`.
+Also note that having and null part and attempting to bump it will start
+it at its starting value, and it will bring along its required child if
+it has one. A starting value by default is the first value in the list
+of its `identifiers`. In this case we see that `pre` starts with the
+value of `alpha`. If there is no list of `identifiers` then the starting
+value is `0` since a part defaults to be numeric.
 
 ### Prefix priority
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
-abump --bump patch dev
+myver --bump patch dev
 > 3.8.3+dev
-abump --bump patch build dev
+myver --bump patch build dev
 > 3.8.4+build.1-dev
 ```
 
@@ -224,18 +202,18 @@ it will use the prefix of the group instead of the part's prefix.
 ### Manually set the value of a string part
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
-abump --bump minor pre=beta
+myver --bump minor pre=beta
 > 3.9.0-beta.1
-abump --bump patch=5
+myver --bump patch=5
 > 3.9.5
 ```
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
-abump --bump minor pre=beta dev
+myver --bump minor pre=beta dev
 > 3.9.0-beta.1+dev
 ```
 
@@ -251,9 +229,9 @@ of the part)
 ### Deleting optional part
 
 ```shell
-abump --current
+myver --current
 > 3.9.0-beta.1+build.34
-abump --delete pre
+myver --delete pre
 > 3.9.0
 ```
 
@@ -263,9 +241,9 @@ optional part will also delete its descendants. Although we can keep a
 descendant if we use `--bump`.
 
 ```shell
-abump --current
+myver --current
 > 3.9.0-beta.1+build.34
-abump --delete pre --bump build
+myver --delete pre --bump build
 > 3.9.0+build.1
 ```
 
@@ -276,45 +254,41 @@ intuitive, although I am including this section just to explain the
 implicit children in a technical way so that people can debug any of
 their use cases which may be acting weird due to this feature. So you do
 not have to understand this section to make use of implicit children, it
-should hopefully come to you naturally. And one easy trick to understand
-implicit children is to know that implicit children are equivalent to
-optional explicit children. An example of an optional explicit child is
-the `devnum` part in relation to the `dev` part.
+should hopefully come to you naturally.
 
 ```shell
-abump --current
+myver --current
 > 3.8.2+build.1
 # Reads as: bump patch, with pre, with dev
-abump --bump dev
+myver --bump dev
 > 3.8.2+build.1-dev
 ```
 
 This is the clearest example of implicit children, in the config we do
-not explicitly define the `dev` part to be a child of the `buildnum`
+not explicitly define the `dev` part to be required by the `buildnum`
 part, yet it becomes a child of `buildnum` when we add `dev` in a bump.
 This is due to the order of the parts in the config, and also due to
 `dev` not being a required child of any other parts, so the only logical
-place to put the `dev` part is after the last part that has a value.
+place to put the `dev` part is after the last part that has a value,
+which in this case is `buildnum`.
 
 ```shell
-abump --current
+myver --current
 > 3.8.2+build.1-dev
 # Reads as: bump patch, with pre, with dev
-abump --bump buildnum
+myver --bump buildnum
 > 3.8.2+build.2
 ```
 
-Also keep in mind that implicit children that are optional, still follow
-the same rules as explicit children that are optional, which means that
-they will be removed if their parent is bumped. In the above example if
-you wanted to keep `dev` you need to be explicit and use
-`abump --bump buildnum dev`
+Also keep in mind that implicit children will be removed if their parent
+is bumped. In the above example if you wanted to keep `dev` you need to
+be explicit and use `myver --bump buildnum dev`
 
 ```shell
-abump --current
+myver --current
 > 3.8.2
 # Reads as: bump patch, with pre, with dev
-abump --bump patch pre dev
+myver --bump patch pre dev
 > 3.8.3-alpha.1+dev
 ```
 
@@ -326,39 +300,34 @@ the `prenum` part, and this happens due to `prenum` being a required
 child of `pre`, and `prenum` is also defined before the `dev` part is
 defined in the config, so it takes precedence.
 
-Also, to go into more detail -- since the `pre` group has the `meta`
-group as a child, and `dev` is in the `meta` group, it means that `dev`
-is a valid descendant of the `pre` group. But the `build` part is
-defined before the `dev` part, so why are we allowed to ignore
-the `build` part? It's because the `build` part is optional, and
-the `dev` part is not explicitly a required child of any other part in
-the `meta` group.
+So why are we allowed to ignore the `build` part? It's because
+the `build` part is not required by any other part that is current set.
 
 ```shell
-abump --current
+myver --current
 > 3.8.3-alpha.1+dev
-# Reads as: bump prenum, with build
-abump --bump build
+# Reads as: bump build
+myver --bump build
 > 3.8.3-alpha.1+build.1
 ```
 
 Why did the `dev` part get removed in this case? This is because of the
-ordering of the parts in the config. When a parent-child relationship is
-broken, the original child part is removed. In this scenario the
-`prenum` and `dev` implicit relationship is broken because adding
-the `build` and `buildnum` part introduces a new implicit child for
-`prenum`. Build is defined in the config before `dev` is defined, so it
-takes precedence, which is why we do not get a new version of something
-like `3.8.3-alpha.1+dev-build.1`
+ordering of the parts in the config. When an implicit parent-child
+relationship is broken, the original child part is removed. In this
+scenario the `prenum` and `dev` implicit relationship is broken because
+adding the `build` and `buildnum` part introduces a new implicit child
+for `prenum`. The `build` part is defined in the config before `dev` is
+defined, so it takes precedence, which is why we do not get a new
+version of something like `3.8.3-alpha.1+dev-build.1`
 
 This scenario is a simple config, so it may be reasonable to think that
 we should just keep the `dev` and make it a child of the `buildnum`
 part, but what happens in more complex scenarios with many possible
-optional part relationships? Also, it is not a good thing to freely
-shift parts around as a side effect of bumping other parts, the command
-should explicitly ask for a version outcome. In other words, having
-`dev` as a child of one part, has no chronological relation with a
-different part having `dev` as its child, they are both dev instances of
-completely different versions. Since `abump --bump build` does not
-explicitly ask for `dev` to be in the bumped version, then we should not
-provide a version that is not explicitly asked for.
+implicit children? Also, it is not a good thing to freely shift parts
+around as a side effect of bumping other parts, the command should
+explicitly ask for a version outcome. In other words, having `dev` as a
+child of one part, has no chronological relation with a different part
+having `dev` as its child, they are both dev instances of completely
+different versions. Since `myver --bump build` does not explicitly ask
+for `dev` to be in the bumped version, then we should not provide a
+version that is not explicitly asked for.

@@ -22,11 +22,11 @@ clean-coverage:
 	- rm -rf htmlcov/
 
 lint:
-	flake8 abump/ tests/
+	flake8 myver/ tests/
 
 test:
 	python -m pytest tests/
 
 coverage: clean-coverage
-	coverage run --source=abump/ --branch -m pytest tests/
+	coverage run --source=myver/ --branch -m pytest tests/
 	coverage html -d htmlcov/
