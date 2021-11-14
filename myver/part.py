@@ -4,10 +4,10 @@ import abc
 from typing import Optional, Union
 
 
-class Part:
-    """A version's part.
+class Part(abc.ABC):
+    """The base class for a version part.
 
-    Example - given a standard semantic version of `3.9.1`, the
+    For example, given a standard semantic version of `3.9.1`, the
     components of the version would be `major.minor.patch`. Where the
     parts are `major = 3`, `minor = 9`, and `patch = 1`.
 
@@ -18,150 +18,81 @@ class Part:
 
     :param key: The unique key of the part. This is used to set dict
         keys for collections of parts.
-    :param order: The order of the part in the version. This defines
-        where the part should be located when the version is parsed.
     :param value: The actual value of the part.
     :param prefix: The prefix of the part.
     :param requires: Another part that this part requires. This means
         that the required part will need to be set if this part is set.
-    :param numeric: Defines if the part is numeric or alphanumeric.
-    :param start_value: The starting value of the part. This is used
-        when the part goes out of a null state, or is reset to its
-        original state.
-    :param identifiers: List of valid identifiers that can be used
-        as string values for this part.
     :param child: The child of the part.
     """
 
     def __init__(self,
                  key: str,
-                 order: int,
                  value: Optional[Union[str, int]],
                  prefix: str = None,
-                 requires: Optional[Part] = None,
-                 numeric: bool = None,
-                 start_value: Union[str, int] = None,
-                 identifiers: list[str] = None,
-                 child: Optional[Part] = None):
+                 requires: Optional[str] = None,
+                 child: Optional[Part] = None,
+                 parent: Optional[Part] = None):
         self.key: str = key
-        self.order: int = order
         self.value: Optional[Union[str, int]] = value
         self.prefix: str = prefix or ''
-        self.requires: Optional[Part] = requires or None
-        self.numeric: bool = numeric or True
-        self.start_value: Optional[str] = start_value or str(0)
-        self.identifiers: list[str] = identifiers or []
+        self.requires: Optional[str] = requires or None
+        self.parent: Optional[Part] = None
         self.child: Optional[Part] = child
+        self.parent: Optional[Part] = parent
 
-        if identifiers and start_value is None:
-            self.numeric = False
-            self.start_value = start_value or self.identifiers[0]
+    @property
+    @abc.abstractmethod
+    def start(self) -> str:
+        """The default start value of a part."""
 
     @abc.abstractmethod
     def next_value(self) -> Optional[str]:
         """Get the next part value."""
-        if self.numeric:
-            return self._next_number()
-        else:
-            return self._next_identifier()
 
-    def bump(self, child_parts: list[str] = None) -> Part:
-        """Bump part value.
+    def is_set(self) -> bool:
+        """Checks if the part's value is not None."""
+        return self.value is not None
 
-        This will do a recursive call resetting each child part, and
-        each child's child part etc...
-        """
+    def bump(self):
+        """Bump this part's value."""
         self.value = self.next_value()
-        self._reset_child(child_parts)
-        return self
+        self.child.reset()
 
-    @property
-    def child_key(self) -> Optional[str]:
-        """Get the key of this part's child if it has a child.
-
-        :return: The key of this part's child.
-        """
-        if self.child is None:
-            return None
-
-        child_key = None
-        for key in self.config.children:
-            if self.config.children[key].order == self.child.config.order:
-                child_key = key
-
-        return child_key
-
-    def reset(self, child_parts: list[str] = None):
+    def reset(self):
         """Reset part value to the start value.
 
         Resetting the part to the start value will also make a recursive
-        call to its child, reset them values too.
+        call to its child, resetting their values too.
         """
-        self.value = self.start_value
-        self._reset_child(child_parts)
+        if self.is_required(self.key):
+            self.value = self.start
+        else:
+            self.value = None
 
-    def set_child(self, parts: dict[str, Part]) -> bool:
-        """Sets the child for this part from a dict of parts.
+        if self.child is not None:
+            self.child.reset()
 
-        When getting a part from a value, you will not have its child
-        straight away (if it should have one). If you have a dict of
-        `Part` objects, you can find the child for part based on their
-        configs.
+    def is_required(self, key: str) -> bool:
+        """Check if a part is required based on its key.
 
-        It is important to know that the child will be set to the
-        reference value of the part in the dict if a child is found.
+        This does a recursive call up to all of the parents until it
+        reaches the final parent to check if any of them require the
+        part specified.
 
-        :param parts: The dict of parts to look for a child.
-        :return: True if a child is set.
+        :param key: The key of the part that you want to check.
         """
-        if self.child is None:
-            for key in parts:
-                if key in self.config.children:
-                    self.child = parts[key]
-                    return True
+        return self._is_required(key)
 
-        if self.child_key in parts:
-            self.child = parts[self.child_key]
-            return True
-
+    def _is_required(self, key: str) -> bool:
+        if self.parent is not None:
+            if self.parent.requires == key and self.parent.is_set():
+                return True
+            else:
+                return self.parent.is_required(key)
         return False
 
-    def _next_number(self) -> Optional[str]:
-        if self.value is not None:
-            next_value = int(self.value)
-            next_value += 1
-            return str(next_value)
-        else:
-            return self.start_value
-
-    def _next_identifier(self) -> Optional[str]:
-        if self.value is not None:
-            current_index = self.identifiers.index(self.value)
-            next_index = current_index + 1
-
-            if next_index < len(self.identifiers):
-                return self.identifiers[next_index]
-            return None
-        else:
-            return self.start_value
-
-    def _reset_child(self, bump_keys: list[str] = None):
-        if self.child is not None:
-            if self.child.key == self.requires:
-                # We have a required child so reset it without checking
-                # `bump_keys` since the child will be reset anyway.
-                self.child.reset(bump_keys)
-            elif bump_keys is not None and self.child.key in bump_keys:
-                # We are bumping a non-required child in this part's
-                # group so we will reset it.
-                self.child.reset(bump_keys)
-            else:
-                # Child is not required and it is not in the `bump_keys`
-                # so we do not want it in the version.
-                self.child.value = None
-
     def __str__(self):
-        return f"{self.value}"
+        return f'{self.prefix}{self.value}'
 
     def __eq__(self, other: Part) -> bool:
         """Checks if this part is equal to another part.
@@ -174,15 +105,93 @@ class Part:
         :param other: The other part to compare for equality.
         :return: True if the parts are equal.
         """
-        return (self.order == other.order) and (
-                self.value == other.value) and (self.child == other.child)
+        return (self.value == other.value) and (self.child == other.child)
 
-    def __lt__(self, other: Part) -> bool:
-        """This is used as a component of sorting parts.
 
-        Compares part's order to see if one is less than another.
+class IdentifierPart(Part):
+    """An identifier part.
 
-        :param other: The other part to compare.
-        :return: True if this part is less than the other part.
-        """
-        return self.order < other.order
+    :param strings: List of valid strings that can be used as an
+        identifier for this part.
+    :param start: The starting value of the part. This is used when the
+        part goes out of a null state, or is reset to its original
+        state. If this is specified it must be a string that is in the
+        `strings` list.
+    """
+
+    def __init__(self,
+                 key: str,
+                 value: Optional[Union[str, int]],
+                 strings: list[str],
+                 prefix: str = None,
+                 requires: Optional[str] = None,
+                 child: Optional[Part] = None,
+                 parent: Optional[Part] = None,
+                 start: str = None):
+        super().__init__(key, value, prefix, requires, child, parent)
+        self.strings: list[str] = strings
+        self._start: str = start or self.strings[0]
+
+    @property
+    def start(self) -> str:
+        return self._start
+
+    def next_value(self) -> Optional[str]:
+        if self.is_set():
+            current_index = self.strings.index(self.value)
+            next_index = current_index + 1
+
+            if next_index < len(self.strings):
+                return self.strings[next_index]
+            return None
+        else:
+            return self.start
+
+
+class NumberPart(Part):
+    """A number part.
+
+    :param label: The label for the number part.
+    :param label_suffix: The suffix to use for separating the label and
+        the number.
+    :param start: The starting value of the part. This is used when the
+        part goes out of a null state, or is reset to its original
+        state.
+    :param show_start: If true, the start value will be shown in the
+        version. If false, then the start value wont be shown although
+        the next value (after a bump) will be shown.
+    """
+
+    def __init__(self,
+                 key: str,
+                 value: Optional[Union[str, int]],
+                 prefix: str = None,
+                 requires: Optional[str] = None,
+                 child: Optional[Part] = None,
+                 parent: Optional[Part] = None,
+                 label: str = None,
+                 label_suffix: str = None,
+                 start: int = None,
+                 show_start: bool = True):
+        super().__init__(key, value, prefix, requires, child, parent)
+        self.label: str = label or ''
+        self.label_suffix: str = label_suffix or ''
+        self._start: str = start or str(0)
+        self.show_start: bool = show_start
+
+    @property
+    def start(self) -> str:
+        return self._start
+
+    def next_value(self) -> Optional[str]:
+        if self.is_set():
+            next_value = int(self.value)
+            next_value += 1
+            return str(next_value)
+        else:
+            return self.start
+
+    def __str__(self):
+        if self.value == self.start and not self.show_start:
+            return f'{self.prefix}{self.label}'
+        return f'{self.prefix}{self.label}{self.label_suffix}{self.value}'

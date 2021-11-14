@@ -7,84 +7,56 @@
 # the value of the given entry, and we imply the entry value due to the
 # value of other entries.
 
-groups:
-  core:
+parts:
+  major:
+    value: 3
     # prefix: null
-    parts:
-      major:
-        requires: minor
-        value: 3
-        # identifiers: null
-        # numeric: true
-        # prefix: null
-        # start: 0
+    requires: minor
 
-      minor:
-        requires: patch
-        prefix: '.'
-        value: 8
-        # identifiers: null
-        # numeric: true
-        # start: 0
+  minor:
+    value: 9
+    prefix: '.'
+    requires: patch
 
-      patch:
-        prefix: '.'
-        value: 2
-        # requires: null
-        # identifiers: null
-        # numeric: true
-        # start: 0
+  patch:
+    value: 2
+    prefix: '.'
+    # requires: null
 
   pre:
+    value: null
     prefix: '-'
-    parts:
-      pre:
-        requires: prenum
-        identifiers: [ alpha, beta, rc ]
-        value: null
-        # numeric: false
-        # prefix: null
-        # start: alpha
+    requires: prenum
+    identifier:
+      strings: [ 'alpha', 'beta', 'rc' ]
+      # start: 'alpha'
 
-      prenum:
-        prefix: '.'
-        start: 1
-        value: null
-        # requires: null
-        # identifiers: null
-        # numeric: true
+  prenum:
+    prefix: '.'
+    value: null
+    # requires: null
+    number:
+      # name: null
+      # name-suffix: null
+      start: 1
+      # show-start: true
 
-  meta:
+  build:
+    value: null
     prefix: '+'
-    parts:
-      build:
-        requires: buildnum
-        identifiers: [ build ]
-        value: null
-        # numeric: false
-        # prefix: null
-        # start: build
+    # requires: null
+    number:
+      name: 'build'
+      name-suffix: '.'
+      start: 1
+      # show-start: true
 
-      buildnum:
-        prefix: '.'
-        start: 1
-        value: null
-        # requires: null
-        # identifiers: null
-        # numeric: true
-
-      dev:
-        identifiers: [ dev ]
-        prefix: '-'
-        value: null
-        # requires: null
-        # numeric: true
-        # start: dev
-
-      devnum:
-        prefix: '.'
-        start: 2
-        value: null
-        # children: null
-        # identifiers: null
-        # numeric: true
+  dev:
+    value: null
+    prefix: '+'
+    # requires: null
+    number:
+      name: 'build'
+      name-suffix: '.'
+      start: 1
+      show-start: false

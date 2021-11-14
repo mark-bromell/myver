@@ -7,47 +7,82 @@ section to further understand how myver works, and also how to know how
 the configuration affects the version
 
 ```yaml
-# Put each group of parts in here.
-groups:
-  # This is a group named `core`.
-  core:
-    # Defines the prefix for the group as a whole, this prefix will override
-    # the prefix of the first occurring part of the group (that is if the first
-    # part of the group even has a prefix).
+# required
+# Put each of your part elements inside here.
+parts:
+  # required (at least 1)
+  # This is one of our parts with its key named `main`.
+  main:
+    # string | int | null -- required
+    # If you do not define a part value, it will use the start value if
+    # it is invoked in a bump. If a part value is null, then it will not
+    # be shown in the version.
+    value: null
+
+    # string | null -- optional
+    # Defines any other part that this part requires. This means that
+    # `main` cannot exist without having its required part as a direct 
+    # child of this part. Value must be a valid part name.
+    requires: null
+
+    # string | null -- optional
+    # Parts may have a character prefix in order to visually separate
+    # them from previous parts, or to denote more meaning to the part.
     prefix: null
 
-    # Put each of your part elements inside here.
-    parts:
-      # This is one of our parts named `mypart`.
-      mypart:
-        # Defines any other part that this part requires. This means that
-        # `mypart` cannot exist without having its required part as a direct
-        # child of this part.
-        requires: null
+    # You can either have `identifier` or `number`, you cannot have
+    # both. If neither is configured, then the part will be configured
+    # as a number part, with a default start value of `0`.
 
-        # Parts may have a character prefix in order to visually separate
-        # them from previous parts, or to denote more meaning to the part.
-        prefix: null
+    # optional
+    # This configures a part to be an identifier string. You would use
+    # this when you have multiple possible strings for a part that have
+    # a chronological order between each string. A common example are
+    # the pre-release identifiers of `alpha`, `beta`, and `rc`.
+    identifier:
+      # list -- required
+      # These are the strings which should be listed in their
+      # chronological order.
+      strings: [ 'string1', 'string2' ]
 
-        # List of strings that can be potential values in a part. Can only
-        # be used if the part is not numeric (numeric: false).
-        identifiers: null
+      # string -- optional
+      # You can define a custom start value, by default the start value
+      # will be the first value in the `strings` list. If you do define
+      # a custom start value, it needs to be a value that is also in the
+      # string list.
+      start: 'string1'
 
-        # Numerics can be incremented with no limit. If numeric is false
-        # then incrementing cannot occur. If you want a part to be a custom
-        # string without any identifier constraints, set `numeric` to false
-        # and leave `identifiers` as null. This would mean you need to define
-        # the string value for the part each time you want to bump with it.
-        numeric: true
+    # optional
+    # This configures a part to be a number. This means that it is
+    # easily incremented, and it cannot contain alphabetic characters.
+    number:
+      # string | null -- optional
+      # Sometimes you will want a label for a number part. An example
+      # of this would be a `build` part, instead of just using a number
+      # to represent this part, you may instead see something like
+      # `build.4` as a part.
+      label: null
 
-        # Since parts are numeric by default, then this is the starting
-        # point by default.
-        start: 0
+      # string | null -- optional
+      # A label may have a suffix (characters after the label) in order
+      # to separate the label with the number. An example of this would
+      # be the `.` suffix on a `build` label, which would give something
+      # like `build.4` as a part.
+      label-suffix: null
 
-        # If you do not define a part value, it will use the start value if
-        # it is invoked in a bump. If a part value is null, then it will not
-        # be shown in the version.
-        value: null
+      # int -- optional
+      # When the part is reset or invoked, this is the value that the
+      # part will start at. By default, number parts start at 0.
+      start: 0
+
+      # boolean -- optional
+      # Sometimes you may not want to show the first value of a number
+      # part. An example of this would be a `dev` part, commonly you
+      # may see a version like `3.4.5+dev` which would define the first
+      # dev instance of a version, then the second dev instance would
+      # look like this `3.4.5+dev.2`.
+      show-start: true
+
 ```
 
 # Examples
@@ -59,57 +94,50 @@ values of each part, and it will also define the configuration of each
 part.
 
 ```yaml
-groups:
-  core:
-    parts:
-      major:
-        requires: minor
-        value: 3
+parts:
+  major:
+    value: 3
+    requires: minor
 
-      minor:
-        requires: patch
-        prefix: '.'
-        value: 8
+  minor:
+    value: 9
+    prefix: '.'
+    requires: patch
 
-      patch:
-        prefix: '.'
-        value: 2
+  patch:
+    value: 2
+    prefix: '.'
 
   pre:
+    value: null
     prefix: '-'
-    parts:
-      pre:
-        requires: prenum
-        identifiers: [ alpha, beta, rc ]
-        value: null
+    requires: prenum
+    identifier:
+      strings: [ 'alpha', 'beta', 'rc' ]
 
-      prenum:
-        prefix: '.'
-        start: 1
-        value: null
+  prenum:
+    prefix: '.'
+    value: null
+    number:
+      start: 1
 
-  meta:
+  build:
+    value: null
     prefix: '+'
-    parts:
-      build:
-        requires: buildnum
-        identifiers: [ build ]
-        value: null
+    number:
+      label: 'build'
+      label-suffix: '.'
+      start: 1
 
-      buildnum:
-        prefix: '.'
-        start: 1
-        value: null
+  dev:
+    value: null
+    prefix: '+'
+    number:
+      label: 'build'
+      label-suffix: '.'
+      start: 1
+      show-start: false
 
-      dev:
-        identifiers: [ dev ]
-        prefix: '-'
-        value: null
-
-      devnum:
-        prefix: '.'
-        start: 2
-        value: null
 ```
 
 ### Preamble
@@ -129,10 +157,6 @@ myver --bump patch
 myver --bump minor
 > 3.9.0
 ```
-
-As you can see, we do not need to specify the group that a part is in.
-Grouping in this example is strategic, which we discuss in the
-[Prefix priority](#prefix-priority) scenario.
 
 ### Bumping with non-required child
 
@@ -174,30 +198,12 @@ We see that specifying `pre` to be brought along with the bump of
 `patch`, also brings along `prenum`. This is because `prenum` is
 configured to be required by `pre`.
 
-Also note that having and null part and attempting to bump it will start
-it at its starting value, and it will bring along its required child if
-it has one. A starting value by default is the first value in the list
-of its `identifiers`. In this case we see that `pre` starts with the
-value of `alpha`. If there is no list of `identifiers` then the starting
-value is `0` since a part defaults to be numeric.
-
-### Prefix priority
-
-```shell
-myver --current
-> 3.8.2
-myver --bump patch dev
-> 3.8.3+dev
-myver --bump patch build dev
-> 3.8.4+build.1-dev
-```
-
-The `dev` part is configured to have a prefix of `'-'`, although in the
-first bump of this scenario, it has a `'+'`, what's going on here? This
-is because the group prefix takes priority of the part prefix. The `dev`
-part is in the `meta` group, and the `meta` group has a prefix of `'+'`,
-so no matter the prefix of a part, if it is the first part of a group,
-it will use the prefix of the group instead of the part's prefix.
+Also note that having a null part and attempting to bump it will set it
+at its starting value, and it will bring along its required child if it
+has one. A starting value by default is the first value in the list of
+its `strings` in the `identifier` configuration. In this case we see
+that `pre` starts with the value of `alpha`. If it is a number part then
+the start value is `0` by default.
 
 ### Manually set the value of a string part
 
@@ -218,13 +224,13 @@ myver --bump minor pre=beta dev
 ```
 
 Sometimes you may not want to use the start value of a string part. Here
-we see that `pre` is a string part (which is implied through
-its `identifiers` list of strings in the config). By providing the `'='`
-character and a valid identifier directly after `pre`, it will use that
-identifier value for the `pre` part, in this case it is `beta`, which is
-skipping the `alhpa` value. It is important that you specify a part
-value that is valid (i.e. it is in the `identifiers` list in the config
-of the part)
+we see that `pre` is an identifier part (which is implied through having
+its `identifier` configuration). By providing the `'='` character and a
+valid identifier directly after `pre`, it will use that identifier value
+for the `pre` part, in this case it is `beta`, which is skipping
+the `alhpa` value. It is important that you specify a part value that is
+valid (i.e. it is in the `strings` list in the `identifier`
+configuration of the part)
 
 ### Deleting optional part
 

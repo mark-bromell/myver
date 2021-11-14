@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Union
-
-from myver.group import Group
+from myver.part import Part
 
 
 class Version:
@@ -11,39 +9,38 @@ class Version:
     This is the top level class for a version. It contains the groups
     of parts and this is where the version operations are performed.
 
-    :param groups: The configs of each of the groups of the
-        version. This is used for helping operations on the actual
-        version values.
+    :param parts:
     """
 
-    def __init__(self, groups: dict[str, Group] = None):
-        self.groups: dict[str, Group] = groups or dict()
+    def __init__(self, parts: list[Part] = None):
+        self._parts: list[Part] = parts or list()
+        self.parts = parts
 
     @property
-    def parts_raw(self) -> dict[str, Union[str, int]]:
-        values: dict[str, Union[str, int]] = dict()
-        for group in self.groups.values():
-            values = values | group.parts_raw
-        return values
+    def parts(self) -> list[Part]:
+        return self._parts
+
+    @parts.setter
+    def parts(self, value: list[Part]):
+        self._parts = value
+        # Set the relationships for each part.
+        for i in range(len(self._parts)):
+            if i < len(self._parts) - 1:
+                self._parts[i].child = self._parts[i + 1]
+                self._parts[i + 1].parent = self._parts[i]
 
     def bump(self, keys: list[str]):
         """Bump the version based on part keys.
 
         :param keys: The list of part keys to bump.
         """
-        for group in self.groups.values():
-            group.bump(keys)
+        pass
 
     def __str__(self):
         version_str = ''
-        first = True
 
-        for group in sorted(list(self.groups.values())):
-            if group.has_values():
-                if first:
-                    version_str += f'{group}'
-                    first = False
-                else:
-                    version_str += f'{group.prefix}{group}'
+        for part in self._parts:
+            if part.is_set():
+                version_str += str(part)
 
         return version_str
