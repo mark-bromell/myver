@@ -33,21 +33,38 @@ class Part(abc.ABC):
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None):
         self.key: str = key
-        self.value: Optional[Union[str, int]] = value
+        self.value: Optional[str] = value
         self.prefix: str = prefix or ''
         self.requires: Optional[str] = requires or None
-        self.parent: Optional[Part] = None
-        self.child: Optional[Part] = child
-        self.parent: Optional[Part] = parent
-
-    @property
-    @abc.abstractmethod
-    def start(self) -> str:
-        """The default start value of a part."""
+        self._child: Optional[Part] = None
+        self._parent: Optional[Part] = None
+        self.child = child
+        self.parent = parent
+        self.start = None
 
     @abc.abstractmethod
     def next_value(self) -> Optional[str]:
         """Get the next part value."""
+
+    @property
+    def child(self) -> Optional[Part]:
+        return self._child
+
+    @child.setter
+    def child(self, part: Optional[Part]):
+        self._child = part
+        if self._child and not self._child.parent:
+            self._child.parent = self
+
+    @property
+    def parent(self) -> Optional[Part]:
+        return self._parent
+
+    @parent.setter
+    def parent(self, part: Optional[Part]):
+        self._parent = part
+        if self._parent and not self._parent.child:
+            self._parent.child = self
 
     def is_set(self) -> bool:
         """Checks if the part's value is not None."""
@@ -56,7 +73,8 @@ class Part(abc.ABC):
     def bump(self):
         """Bump this part's value."""
         self.value = self.next_value()
-        self.child.reset()
+        if self.child:
+            self.child.reset()
 
     def reset(self):
         """Reset part value to the start value.
@@ -64,15 +82,19 @@ class Part(abc.ABC):
         Resetting the part to the start value will also make a recursive
         call to its child, resetting their values too.
         """
-        if self.is_required(self.key):
+        if self.is_required():
             self.value = self.start
         else:
             self.value = None
 
-        if self.child is not None:
+        if self.child:
             self.child.reset()
 
-    def is_required(self, key: str) -> bool:
+    def is_required(self) -> bool:
+        """Checks if this part is required by any parents."""
+        return self._parent_requires(self.key)
+
+    def _parent_requires(self, key: str) -> bool:
         """Check if a part is required based on its key.
 
         This does a recursive call up to all of the parents until it
@@ -81,14 +103,11 @@ class Part(abc.ABC):
 
         :param key: The key of the part that you want to check.
         """
-        return self._is_required(key)
-
-    def _is_required(self, key: str) -> bool:
         if self.parent is not None:
             if self.parent.requires == key and self.parent.is_set():
                 return True
             else:
-                return self.parent.is_required(key)
+                return self.parent._parent_requires(key)
         return False
 
     def __str__(self):
@@ -105,7 +124,7 @@ class Part(abc.ABC):
         :param other: The other part to compare for equality.
         :return: True if the parts are equal.
         """
-        return (self.value == other.value) and (self.child == other.child)
+        return (self.key == other.key) and (self.value == other.value)
 
 
 class IdentifierPart(Part):
@@ -130,11 +149,7 @@ class IdentifierPart(Part):
                  start: str = None):
         super().__init__(key, value, prefix, requires, child, parent)
         self.strings: list[str] = strings
-        self._start: str = start or self.strings[0]
-
-    @property
-    def start(self) -> str:
-        return self._start
+        self.start: str = start or self.strings[0]
 
     def next_value(self) -> Optional[str]:
         if self.is_set():
@@ -176,12 +191,8 @@ class NumberPart(Part):
         super().__init__(key, value, prefix, requires, child, parent)
         self.label: str = label or ''
         self.label_suffix: str = label_suffix or ''
-        self._start: str = start or str(0)
+        self.start: str = start or str(0)
         self.show_start: bool = show_start
-
-    @property
-    def start(self) -> str:
-        return self._start
 
     def next_value(self) -> Optional[str]:
         if self.is_set():
