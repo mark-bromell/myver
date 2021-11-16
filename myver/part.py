@@ -11,11 +11,6 @@ class Part(abc.ABC):
     components of the version would be `major.minor.patch`. Where the
     parts are `major = 3`, `minor = 9`, and `patch = 1`.
 
-    Internally, a part will treat its value as a string, this makes it
-    much easier to deal with the value when operating on it. If the
-    value is numeric, the conversion of the value into an integer can
-    be delegated to the locations where it is needed as an integer.
-
     :param key: The unique key of the part. This is used to set dict
         keys for collections of parts.
     :param value: The actual value of the part.
@@ -28,12 +23,12 @@ class Part(abc.ABC):
     def __init__(self,
                  key: str,
                  value: Optional[Union[str, int]],
-                 prefix: str = None,
+                 prefix: Optional[str] = None,
                  requires: Optional[str] = None,
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None):
         self.key: str = key
-        self.value: Optional[str] = value
+        self.value: Optional[Union[str, int]] = value
         self.prefix: str = prefix or ''
         self.requires: Optional[str] = requires or None
         self._child: Optional[Part] = None
@@ -43,7 +38,7 @@ class Part(abc.ABC):
         self.start = None
 
     @abc.abstractmethod
-    def next_value(self) -> Optional[str]:
+    def next_value(self) -> Optional[Union[str, int]]:
         """Get the next part value."""
 
     @property
@@ -116,11 +111,6 @@ class Part(abc.ABC):
     def __eq__(self, other: Part) -> bool:
         """Checks if this part is equal to another part.
 
-        The part equality is compared on the following attributes:
-        * Part's order
-        * Part's value
-        * If the child is equal too
-
         :param other: The other part to compare for equality.
         :return: True if the parts are equal.
         """
@@ -135,12 +125,12 @@ class IdentifierPart(Part):
     :param start: The starting value of the part. This is used when the
         part goes out of a null state, or is reset to its original
         state. If this is specified it must be a string that is in the
-        `strings` list.
+        `self.strings` list.
     """
 
     def __init__(self,
                  key: str,
-                 value: Optional[Union[str, int]],
+                 value: Optional[str],
                  strings: list[str],
                  prefix: str = None,
                  requires: Optional[str] = None,
@@ -179,7 +169,7 @@ class NumberPart(Part):
 
     def __init__(self,
                  key: str,
-                 value: Optional[Union[str, int]],
+                 value: Optional[int],
                  prefix: str = None,
                  requires: Optional[str] = None,
                  child: Optional[Part] = None,
@@ -191,14 +181,12 @@ class NumberPart(Part):
         super().__init__(key, value, prefix, requires, child, parent)
         self.label: str = label or ''
         self.label_suffix: str = label_suffix or ''
-        self.start: str = start or str(0)
+        self.start: int = start or 0
         self.show_start: bool = show_start
 
-    def next_value(self) -> Optional[str]:
+    def next_value(self) -> Optional[int]:
         if self.is_set():
-            next_value = int(self.value)
-            next_value += 1
-            return str(next_value)
+            return self.value + 1
         else:
             return self.start
 

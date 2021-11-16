@@ -10,7 +10,7 @@ class Version:
     This is the top level class for a version. It contains the groups
     of parts and this is where the version operations are performed.
 
-    :param parts:
+    :param parts: The list of parts in the version.
     """
 
     def __init__(self, parts: list[Part] = None):
@@ -32,9 +32,10 @@ class Version:
         self._parts = parts
 
         # Make sure all keys are unique.
-        keys = [p.key for p in self._parts]
-        if len(keys) > len(set(keys)):
-            raise KeyConflictError
+        keys = [p.key for p in self._parts] or []
+        for key in keys:
+            if keys.count(key) > 1:
+                raise KeyConflictError(key)
 
         # Set the relationships for each part.
         for i in range(len(self._parts)):
