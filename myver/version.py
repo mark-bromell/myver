@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from myver.error import KeyConflictError
-from myver.part import Part
+from myver.config import VersionConfig
+from myver.part import Part, IdentifierPart, NumberPart
 
 
 class Version:
@@ -10,34 +10,30 @@ class Version:
     This is the top level class for a version. It contains the groups
     of parts and this is where the version operations are performed.
 
-    :param parts: The list of parts in the version.
+    :param config: Configuration for the version
     """
 
-    def __init__(self, parts: list[Part] = None):
-        self._parts: list[Part] = parts or list()
-        self.parts = parts or list()
+    def __init__(self, config: VersionConfig):
+        self.config: VersionConfig = config
+        self._parts: list[Part] = []
+        self._set_parts()
 
     @property
     def parts(self) -> list[Part]:
         return self._parts
 
-    @parts.setter
-    def parts(self, parts: list[Part]):
-        """Sets the parts list.
+    def _set_parts(self):
+        """Sets the part objects based on `self.config`."""
+        for part_config in self.config.part_configs:
+            if part_config.identifier:
+                self._parts.append(IdentifierPart(config=part_config))
+            if part_config.number:
+                self._parts.append(NumberPart(config=part_config))
 
-        :param parts: The parts to set.
-        :raise KeyConflictError: A part key appears 2 or more times in
-            the list.
-        """
-        self._parts = parts
+        self._set_part_relationships()
 
-        # Make sure all keys are unique.
-        keys = [p.key for p in self._parts] or []
-        for key in keys:
-            if keys.count(key) > 1:
-                raise KeyConflictError(key)
-
-        # Set the relationships for each part.
+    def _set_part_relationships(self):
+        """Sets the relationships for `self._parts`."""
         for i in range(len(self._parts)):
             if i < len(self._parts) - 1:
                 self._parts[i].child = self._parts[i + 1]

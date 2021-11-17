@@ -3,43 +3,55 @@ from __future__ import annotations
 import abc
 from typing import Optional, Union
 
+from myver.config import PartConfig
+
 
 class Part(abc.ABC):
     """The base class for a version part.
 
-    For example, given a standard semantic version of `3.9.1`, the
-    components of the version would be `major.minor.patch`. Where the
-    parts are `major = 3`, `minor = 9`, and `patch = 1`.
-
-    :param key: The unique key of the part. This is used to set dict
-        keys for collections of parts.
-    :param value: The actual value of the part.
-    :param prefix: The prefix of the part.
-    :param requires: Another part that this part requires. This means
-        that the required part will need to be set if this part is set.
+    :param config: Part's configuration.
     :param child: The child of the part.
+    :param parent: The parent of the part.
     """
 
     def __init__(self,
-                 key: str,
-                 value: Optional[Union[str, int]],
-                 prefix: Optional[str] = None,
-                 requires: Optional[str] = None,
+                 config: PartConfig,
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None):
-        self.key: str = key
-        self.value: Optional[Union[str, int]] = value
-        self.prefix: str = prefix or ''
-        self.requires: Optional[str] = requires or None
+        self.config: PartConfig = config
         self._child: Optional[Part] = None
         self._parent: Optional[Part] = None
         self.child = child
         self.parent = parent
-        self.start = None
 
     @abc.abstractmethod
     def next_value(self) -> Optional[Union[str, int]]:
         """Get the next part value."""
+
+    @property
+    @abc.abstractmethod
+    def start(self) -> Union[str, int]:
+        """Get the start value in a usable form (i.e. not None)"""
+
+    @property
+    def key(self):
+        return self.config.key
+
+    @property
+    def value(self) -> Union[str, int]:
+        return self.config.value
+
+    @value.setter
+    def value(self, new_value: Union[str, int]):
+        self.config.value = new_value
+
+    @property
+    def requires(self) -> Optional[str]:
+        return self.config.requires
+
+    @property
+    def prefix(self):
+        return self.config.prefix or ''
 
     @property
     def child(self) -> Optional[Part]:
@@ -109,37 +121,25 @@ class Part(abc.ABC):
         return f'{self.prefix}{self.value}'
 
     def __eq__(self, other: Part) -> bool:
-        """Checks if this part is equal to another part.
-
-        :param other: The other part to compare for equality.
-        :return: True if the parts are equal.
-        """
         return (self.key == other.key) and (self.value == other.value)
 
 
 class IdentifierPart(Part):
-    """An identifier part.
-
-    :param strings: List of valid strings that can be used as an
-        identifier for this part.
-    :param start: The starting value of the part. This is used when the
-        part goes out of a null state, or is reset to its original
-        state. If this is specified it must be a string that is in the
-        `self.strings` list.
-    """
+    """An identifier part."""
 
     def __init__(self,
-                 key: str,
-                 value: Optional[str],
-                 strings: list[str],
-                 prefix: str = None,
-                 requires: Optional[str] = None,
+                 config: PartConfig,
                  child: Optional[Part] = None,
-                 parent: Optional[Part] = None,
-                 start: str = None):
-        super().__init__(key, value, prefix, requires, child, parent)
-        self.strings: list[str] = strings
-        self.start: str = start or self.strings[0]
+                 parent: Optional[Part] = None):
+        super().__init__(config, child, parent)
+
+    @property
+    def strings(self) -> list[str]:
+        return self.config.identifier.strings
+
+    @property
+    def start(self) -> str:
+        return self.config.identifier.start
 
     def next_value(self) -> Optional[str]:
         if self.is_set():
@@ -154,35 +154,29 @@ class IdentifierPart(Part):
 
 
 class NumberPart(Part):
-    """A number part.
-
-    :param label: The label for the number part.
-    :param label_suffix: The suffix to use for separating the label and
-        the number.
-    :param start: The starting value of the part. This is used when the
-        part goes out of a null state, or is reset to its original
-        state.
-    :param show_start: If true, the start value will be shown in the
-        version. If false, then the start value wont be shown although
-        the next value (after a bump) will be shown.
-    """
+    """A number part."""
 
     def __init__(self,
-                 key: str,
-                 value: Optional[int],
-                 prefix: str = None,
-                 requires: Optional[str] = None,
+                 config: PartConfig,
                  child: Optional[Part] = None,
-                 parent: Optional[Part] = None,
-                 label: str = None,
-                 label_suffix: str = None,
-                 start: int = None,
-                 show_start: bool = True):
-        super().__init__(key, value, prefix, requires, child, parent)
-        self.label: str = label or ''
-        self.label_suffix: str = label_suffix or ''
-        self.start: int = start or 0
-        self.show_start: bool = show_start
+                 parent: Optional[Part] = None):
+        super().__init__(config, child, parent)
+
+    @property
+    def label(self) -> Optional[str]:
+        return self.config.number.label or ''
+
+    @property
+    def label_suffix(self) -> Optional[str]:
+        return self.config.number.label_suffix or ''
+
+    @property
+    def start(self) -> int:
+        return self.config.number.start or 0
+
+    @property
+    def show_start(self) -> bool:
+        return self.config.number.show_start
 
     def next_value(self) -> Optional[int]:
         if self.is_set():

@@ -1,57 +1,45 @@
 from __future__ import annotations
 
-import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Union
 
 import yaml
 
 from myver.error import ConfigError
-from myver.part import Part, NumberPart, IdentifierPart
-from myver.version import Version
 
 
 @dataclass
-class MyverConfig:
-    parts: list[PartConfig]
-
-    def as_version(self):
-        """Gets the version config as a `Version` object."""
-        parts: list[Part] = []
-        for part_config in self.parts:
-            parts.append(part_config.as_part())
-        return Version(parts)
+class VersionConfig:
+    part_configs: list[PartConfig]
 
 
 @dataclass
 class PartConfig:
     key: str
-    value: Optional[Union[str, int]]
-    requires: Optional[str] = None
-    prefix: Optional[str] = None
-    identifier: Optional[IdentifierConfig] = None
-    number: Optional[NumberConfig] = None
+    """The unique key of the part. This is used to set dict keys for 
+    collections of parts.
+    """
 
-    def as_part(self) -> Part:
-        """Gets the part config as a `Part` object."""
-        if self.identifier:
-            return IdentifierPart(
-                key=self.key,
-                value=self.value,
-                requires=self.requires,
-                prefix=self.prefix,
-                strings=self.identifier.strings,
-                start=self.identifier.start)
-        if self.number:
-            return NumberPart(
-                key=self.key,
-                value=self.value,
-                requires=self.requires,
-                prefix=self.prefix,
-                label=self.number.label,
-                label_suffix=self.number.label_suffix,
-                start=self.number.start,
-                show_start=self.number.show_start)
+    value: Optional[Union[str, int]]
+    """The actual value of the part."""
+
+    requires: Optional[str] = None
+    """Another part that this part requires. This means that the required part
+    will need to be set if this part is set.
+    """
+
+    prefix: Optional[str] = None
+    """The prefix of the part."""
+
+    identifier: Optional[IdentifierConfig] = None
+    """Configuration for identifier part."""
+
+    number: Optional[NumberConfig] = None
+    """Configuration for number part."""
+
+    def __post_init__(self):
+        if not self.identifier and not self.number:
+            self.number = NumberConfig()
 
     def set_part_type(self, part_raw: dict):
         """Either identifier or number parts only.
@@ -81,7 +69,7 @@ class PartConfig:
 
         self.identifier = IdentifierConfig(
             strings=identifier_raw['strings'],
-            start=identifier_raw.get('start', identifier_raw['strings'][0]))
+            start=identifier_raw.get('start'))
 
     def _set_number(self, number_raw: dict):
         if number_raw.get('start'):
@@ -107,15 +95,39 @@ class PartConfig:
 @dataclass
 class IdentifierConfig:
     strings: list[str]
+    """List of valid strings that can be used as an
+    identifier for this part.
+    """
+
     start: str = None
+    """The starting value of the part. This is used when the part goes out of a
+    null state, or is reset to its original state. If this is specified it must
+    be a string that is in the `self.strings` list.
+    """
+
+    def __post_init__(self):
+        if len(self.strings) > 0 and self.start is None:
+            self.start = self.strings[0]
 
 
 @dataclass
 class NumberConfig:
     label: Optional[str] = None
+    """The label for the number part."""
+
     label_suffix: Optional[str] = None
+    """The suffix to use for separating the label and the number."""
+
     start: int = 0
+    """The starting value of the part. This is used when the part goes out of a
+    null state, or is reset to its original state.
+    """
+
     show_start: bool = True
+    """If true, the start value will be shown in the version. If false, then
+    the start value wont be shown although the next value (after a bump) will
+    be shown.
+    """
 
 
 def dict_from_file(path: str) -> dict:
@@ -133,7 +145,7 @@ def dict_from_file(path: str) -> dict:
         return config_dict
 
 
-def config_from_dict(config_dict: dict) -> MyverConfig:
+def config_from_dict(config_dict: dict) -> VersionConfig:
     """Construct version config from a dict.
 
     :param config_dict: The dict with raw version config data.
@@ -141,27 +153,27 @@ def config_from_dict(config_dict: dict) -> MyverConfig:
     :raise ConfigError: If the configuration dict is invalid.
     :raise KeyError: If the config is missing required attributes.
     """
-    parts: list[PartConfig] = []
+    part_configs: list[PartConfig] = []
     # Making part config objects
     for key, part_dict in config_dict['parts']:
-        part = PartConfig(
+        part_config = PartConfig(
             key=key,
             value=part_dict['value'],
             requires=part_dict.get('requires'),
             prefix=part_dict.get('prefix'))
-        part.set_part_type(part_dict)
-        parts.append(part)
+        part_config.set_part_type(part_dict)
+        part_configs.append(part_config)
 
     # Ensuring `requires` points to real keys
-    keys = [p.key for p in parts] or []
-    for part in parts:
-        if part.requires == part.key:
+    keys = [p.key for p in part_configs] or []
+    for part_config in part_configs:
+        if part_config.requires == part_config.key:
             raise ConfigError(
-                f'Part `{part.key}` has a `requires` value that is'
+                f'Part `{part_config.key}` has a `requires` value that is'
                 f'referencing itself, it must reference another part')
-        if part.requires not in keys:
+        if part_config.requires not in keys:
             raise ConfigError(
-                f'Part `{part.key}` has a `requires` value that does not'
-                f'exist, it must be a valid key of another part')
+                f'Part `{part_config.key}` has a `requires` value that does '
+                f'not exist, it must be a valid key of another part')
 
-    return MyverConfig(parts)
+    return VersionConfig(part_configs)
