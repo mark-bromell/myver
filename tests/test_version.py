@@ -1,59 +1,50 @@
 import pytest
 
-from myver.config import (
-    PartConfig, IdentifierConfig, NumberConfig,
-    VersionConfig,
-)
 from myver.part import NumberPart, IdentifierPart
 from myver.version import Version
 
 
 @pytest.fixture
 def semver() -> Version:
-    part_configs = [
-        PartConfig(
+    parts = [
+        NumberPart(
             key='major',
             value=3,
             requires='minor',
         ),
-        PartConfig(
+        NumberPart(
             key='minor',
             value=9,
             prefix='.',
             requires='patch',
         ),
-        PartConfig(
+        NumberPart(
             key='patch',
             value=2,
             prefix='.',
         ),
-        PartConfig(
+        IdentifierPart(
             key='pre',
             value='alpha',
             prefix='-',
-            identifier=IdentifierConfig(
-                strings=['alpha', 'beta', 'rc'],
-            ),
+            strings=['alpha', 'beta', 'rc'],
         ),
-        PartConfig(
+        NumberPart(
             key='prenum',
             value=1,
             prefix='.',
         ),
-        PartConfig(
+        NumberPart(
             key='dev',
             value=None,
             prefix='+',
-            number=NumberConfig(
-                label='dev',
-                label_suffix='.',
-                start=1,
-                show_start=False,
-            ),
+            label='dev',
+            label_suffix='.',
+            start=1,
+            show_start=False,
         ),
     ]
-    version_config = VersionConfig(part_configs)
-    return Version(version_config)
+    return Version(parts)
 
 
 def test_version_str(semver):
@@ -72,30 +63,31 @@ def test_version_bump(semver):
 
 
 def test_set_parts():
-    part_configs = [
-        PartConfig(key='one', value=3),
-        PartConfig(key='two', value=9),
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
     ]
-    version = Version(VersionConfig(part_configs))
+    version = Version()
+    version.parts = parts
     assert len(version.parts) == 2
-    assert version.parts[0].child.key == part_configs[1].key
-    assert version.parts[1].parent.key == part_configs[0].key
+    assert version.parts[0].child.key == parts[1].key
+    assert version.parts[1].parent.key == parts[0].key
 
 
 def test_get_part():
-    part_configs = [
-        PartConfig(key='one', value=3),
-        PartConfig(key='two', value=9),
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
     ]
-    version = Version(VersionConfig(part_configs))
-    assert version.part('one') == NumberPart(part_configs[0])
+    version = Version(parts)
+    assert version.part('one') == parts[0]
 
 
 def test_get_part_key_error():
-    part_configs = [
-        PartConfig(key='one', value=3),
-        PartConfig(key='two', value=9),
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
     ]
-    version = Version(VersionConfig(part_configs))
+    version = Version(parts)
     with pytest.raises(KeyError):
         version.part('three')

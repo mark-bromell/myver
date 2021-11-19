@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from myver.config import VersionConfig
-from myver.part import Part, IdentifierPart, NumberPart
+from myver.error import ConfigError
+from myver.part import Part
 
 
 class Version:
@@ -10,33 +10,29 @@ class Version:
     This is the top level class for a version. It contains the groups
     of parts and this is where the version operations are performed.
 
-    :param config: Configuration for the version
+    :param parts: The list of parts in the version.
     """
 
-    def __init__(self, config: VersionConfig):
-        self.config: VersionConfig = config
-        self._parts: list[Part] = []
-        self._set_parts()
+    def __init__(self, parts: list[Part] = None):
+        self._parts: list[Part] = parts or list()
+        self.parts = parts or list()
 
     @property
     def parts(self) -> list[Part]:
         return self._parts
 
-    def _set_parts(self):
-        """Sets the part objects based on `self.config`."""
-        for part_config in self.config.part_configs:
-            if part_config.identifier:
-                self._parts.append(IdentifierPart(config=part_config))
-            if part_config.number:
-                self._parts.append(NumberPart(config=part_config))
+    @parts.setter
+    def parts(self, new_parts: list[Part]):
+        """Sets the parts list.
 
-        self._set_part_relationships()
-
-    def _set_part_relationships(self):
-        """Sets the relationships for `self._parts`."""
-        for i in range(len(self._parts)):
-            if i < len(self._parts) - 1:
-                self._parts[i].child = self._parts[i + 1]
+        :param new_parts: The parts to set.
+        :raise KeyConflictError: A part key appears 2 or more times in
+            the list.
+        """
+        validate_keys(new_parts)
+        validate_requires(new_parts)
+        self._parts = new_parts
+        set_relationships(self._parts)
 
     def bump(self, keys: list[str]):
         """Bump the version based on part keys.
@@ -65,3 +61,46 @@ class Version:
                 version_str += str(part)
 
         return version_str
+
+
+def validate_requires(parts: list[Part]):
+    """Validates that parts require other valid parts.
+
+    :raise ConfigError: If a part requires itself or a part that does
+        not exist.
+    """
+    keys = [p.key for p in parts] or []
+    for part in parts:
+        if part.requires is not None:
+            if part.requires == part.key:
+                raise ConfigError(
+                    f'Part `{part.key}` has a `requires` key that is'
+                    f'referencing itself, it must reference another part')
+            if part.requires not in keys:
+                raise ConfigError(
+                    f'Part `{part.key}` has a `requires` key '
+                    f'"{part.requires}" that does not exist, it must be a '
+                    f'valid key of another part')
+
+
+def validate_keys(parts: list[Part]):
+    """Validates that they keys are unique.
+
+    :raise ConfigError: If two or more parts with the same key.
+    """
+    keys = [p.key for p in parts] or []
+    for key in keys:
+        if keys.count(key) > 1:
+            raise ConfigError(
+                f'Key "{key}" is configured on more than one part, all '
+                f'parts must have a unique key')
+
+
+def set_relationships(parts: list[Part]):
+    """Sets the parent-child relationships between a list of parts.
+
+    :param parts: The parts to set the relationships for.
+    """
+    for i in range(len(parts)):
+        if i < len(parts) - 1:
+            parts[i].child = parts[i + 1]

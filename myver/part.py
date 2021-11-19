@@ -3,22 +3,33 @@ from __future__ import annotations
 import abc
 from typing import Optional, Union
 
-from myver.config import PartConfig
+from myver.error import ConfigError
 
 
 class Part(abc.ABC):
     """The base class for a version part.
 
-    :param config: Part's configuration.
-    :param child: The child of the part.
-    :param parent: The parent of the part.
+    :param key: The unique key of the part. This is used to set dict
+        keys for collections of parts.
+    :param value: The actual value of the part.
+    :param requires: Another part that this part requires. This means
+        that the required part will need to be set if this part is set.
     """
 
     def __init__(self,
-                 config: PartConfig,
+                 key: str,
+                 value: Optional[Union[str, int]],
+                 requires: Optional[str] = None,
+                 prefix: Optional[str] = None,
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None):
-        self.config: PartConfig = config
+        # Config stuff
+        self._prefix: Optional[str] = prefix
+        self.key: str = key
+        self.value: Optional[Union[str, int]] = value
+        self.requires: Optional[str] = requires
+
+        # Parent child stuff
         self._child: Optional[Part] = None
         self._parent: Optional[Part] = None
         self.child = child
@@ -33,25 +44,18 @@ class Part(abc.ABC):
     def start(self) -> Union[str, int]:
         """Get the start value in a usable form (i.e. not None)"""
 
-    @property
-    def key(self):
-        return self.config.key
+    @start.setter
+    @abc.abstractmethod
+    def start(self, new_start: Union[str, int]):
+        """Set the start value"""
 
     @property
-    def value(self) -> Union[str, int]:
-        return self.config.value
+    def prefix(self) -> str:
+        return self._prefix or ''
 
-    @value.setter
-    def value(self, new_value: Union[str, int]):
-        self.config.value = new_value
-
-    @property
-    def requires(self) -> Optional[str]:
-        return self.config.requires
-
-    @property
-    def prefix(self):
-        return self.config.prefix or ''
+    @prefix.setter
+    def prefix(self, new_prefix: Optional[str]):
+        self._prefix = new_prefix
 
     @property
     def child(self) -> Optional[Part]:
@@ -125,21 +129,51 @@ class Part(abc.ABC):
 
 
 class IdentifierPart(Part):
-    """An identifier part."""
+    """An identifier part.
+
+    :param strings: List of valid strings that can be used as an
+        identifier for this part.
+    :param start: The starting value of the part. This is used when the
+        part goes out of a null state, or is reset to its original
+        state. If this is specified it must be a string that is in the
+        `self.strings` list.
+    """
 
     def __init__(self,
-                 config: PartConfig,
+                 key: str,
+                 value: Optional[str],
+                 strings: list[str],
+                 requires: Optional[str] = None,
+                 prefix: Optional[str] = None,
                  child: Optional[Part] = None,
-                 parent: Optional[Part] = None):
-        super().__init__(config, child, parent)
-
-    @property
-    def strings(self) -> list[str]:
-        return self.config.identifier.strings
+                 parent: Optional[Part] = None,
+                 start: str = None):
+        super().__init__(key, value, requires, prefix, child, parent)
+        self._validate_strings(strings)
+        self.strings: list[str] = strings
+        self._validate_start(start)
+        self._start: Optional[str] = start
 
     @property
     def start(self) -> str:
-        return self.config.identifier.start
+        return self._start or self.strings[0]
+
+    @start.setter
+    def start(self, new_start: str):
+        self._validate_start(new_start)
+        self._start = new_start
+
+    def _validate_start(self, start: Optional[str]):
+        if start is not None and start not in self.strings:
+            raise ConfigError(
+                f'Part `{self.key}` has an `identifier.start` value that is '
+                f'not in the `identifier.strings` list')
+
+    def _validate_strings(self, strings: list[str]):
+        if not len(strings) > 0:
+            raise ConfigError(
+                f'Part `{self.key}` has an `identifier.strings` has an empty '
+                f'list, the list must have at least one string')
 
     def next_value(self) -> Optional[str]:
         if self.is_set():
@@ -154,35 +188,79 @@ class IdentifierPart(Part):
 
 
 class NumberPart(Part):
-    """A number part."""
+    """A number part.
+
+    :param label_suffix: String to use for separating the label and the
+        number.
+    :param start: Starting value of the part. This is used when the part
+        goes out of a null state, or is reset to its original state.
+    :param show_start: If true, the start value will be shown in the
+        version. If false, then the start value wont be shown although
+        the next value (after a bump) will be shown.
+    """
 
     def __init__(self,
-                 config: PartConfig,
+                 key: str,
+                 value: Optional[int],
+                 requires: Optional[str] = None,
+                 prefix: Optional[str] = None,
                  child: Optional[Part] = None,
-                 parent: Optional[Part] = None):
-        super().__init__(config, child, parent)
+                 parent: Optional[Part] = None,
+                 label: Optional[str] = None,
+                 label_suffix: Optional[str] = None,
+                 start: int = None,
+                 show_start: bool = True):
+        super().__init__(key, value, requires, prefix, child, parent)
+        self._label: Optional[str] = label
+        self._label_suffix: Optional[str] = label_suffix
+        self._validate_start(start)
+        self._start: Optional[int] = start
+        self.show_start: bool = show_start
 
     @property
     def label(self) -> Optional[str]:
-        return self.config.number.label or ''
+        return self._label or ''
+
+    @label.setter
+    def label(self, new_label: str):
+        self._label = new_label
 
     @property
     def label_suffix(self) -> Optional[str]:
-        return self.config.number.label_suffix or ''
+        return self._label_suffix or ''
+
+    @label_suffix.setter
+    def label_suffix(self, new_label_suffix: str):
+        self._label_suffix = new_label_suffix
 
     @property
     def start(self) -> int:
-        return self.config.number.start or 0
+        return self._start or 0
 
-    @property
-    def show_start(self) -> bool:
-        return self.config.number.show_start
+    @start.setter
+    def start(self, new_start: int):
+        self._validate_start(new_start)
+        self._start = new_start
 
     def next_value(self) -> Optional[int]:
         if self.is_set():
             return self.value + 1
         else:
             return self.start
+
+    def _validate_start(self, start: Optional[int]):
+        if start is not None:
+            try:
+                int(start)
+            except ValueError:
+                raise ConfigError(
+                    f'Part `{self.key}` has an invalid value for its '
+                    f'`number.start` attribute, it must be an integer')
+
+        if start is not None and start < 0:
+            raise ConfigError(
+                f'Part `{self.key}` has an negative value for its '
+                f'`number.start` attribute, it must be positive')
 
     def __str__(self):
         if self.value == self.start and not self.show_start:
