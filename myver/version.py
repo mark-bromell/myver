@@ -71,16 +71,18 @@ def validate_requires(parts: list[Part]):
     """
     keys = [p.key for p in parts] or []
     for part in parts:
-        if part.requires is not None:
-            if part.requires == part.key:
-                raise ConfigError(
-                    f'Part `{part.key}` has a `requires` key that is'
-                    f'referencing itself, it must reference another part')
-            if part.requires not in keys:
-                raise ConfigError(
-                    f'Part `{part.key}` has a `requires` key '
-                    f'"{part.requires}" that does not exist, it must be a '
-                    f'valid key of another part')
+        if not part.requires:
+            continue
+
+        if part.requires == part.key:
+            raise ConfigError(
+                f'Part `{part.key}` has a `requires` key that is'
+                f'referencing itself, it must reference another part')
+        if part.requires not in keys:
+            raise ConfigError(
+                f'Part `{part.key}` has a `requires` key '
+                f'"{part.requires}" that does not exist, it must be a '
+                f'valid key of another part')
 
 
 def validate_keys(parts: list[Part]):

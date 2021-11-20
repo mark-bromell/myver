@@ -26,13 +26,13 @@ def version_from_dict(config_dict: dict) -> Version:
     """Construct version from a config dict.
 
     :param config_dict: The dict with raw version config data.
-    :return: The version.
     :raise ConfigError: If the configuration dict is invalid.
     :raise KeyError: If the config is missing required attributes.
+    :return: The version.
     """
     parts: list[Part] = []
-    for key, part_dict in config_dict['parts']:
-        parts.append(part_from_dict(key, part_dict))
+    for part_key, part_dict in config_dict['parts'].items():
+        parts.append(part_from_dict(part_key, part_dict))
 
     return Version(parts)
 
@@ -50,8 +50,7 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
             strings=config_dict['identifier']['strings'],
             requires=config_dict.get('requires'),
             prefix=config_dict.get('prefix'),
-            start=config_dict['identifier'].get('start'),
-        )
+            start=config_dict['identifier'].get('start'))
     elif config_dict.get('number'):
         return NumberPart(
             key=key,
@@ -61,13 +60,11 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
             label=config_dict['number'].get('label'),
             label_suffix=config_dict['number'].get('label-suffix'),
             start=config_dict['number'].get('start'),
-            show_start=config_dict['number'].get('show_start'),
-        )
+            show_start=config_dict['number'].get('show_start'))
     else:
         # Default if no type configuration is specified.
         return NumberPart(
             key=key,
             value=config_dict['value'],
             requires=config_dict.get('requires'),
-            prefix=config_dict.get('prefix'),
-        )
+            prefix=config_dict.get('prefix'))

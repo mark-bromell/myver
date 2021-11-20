@@ -23,15 +23,12 @@ class Part(abc.ABC):
                  prefix: Optional[str] = None,
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None):
-        # Config stuff
         self._prefix: Optional[str] = prefix
+        self._child: Optional[Part] = None
+        self._parent: Optional[Part] = None
         self.key: str = key
         self.value: Optional[Union[str, int]] = value
         self.requires: Optional[str] = requires
-
-        # Parent child stuff
-        self._child: Optional[Part] = None
-        self._parent: Optional[Part] = None
         self.child = child
         self.parent = parent
 
@@ -149,10 +146,19 @@ class IdentifierPart(Part):
                  parent: Optional[Part] = None,
                  start: str = None):
         super().__init__(key, value, requires, prefix, child, parent)
-        self._validate_strings(strings)
-        self.strings: list[str] = strings
-        self._validate_start(start)
+        self._strings: list[str] = strings
         self._start: Optional[str] = start
+        self.strings = strings
+        self.start = start
+
+    @property
+    def strings(self):
+        return self._strings
+
+    @strings.setter
+    def strings(self, new_strings: list[str]):
+        self._validate_strings(new_strings)
+        self._strings: list[str] = new_strings
 
     @property
     def start(self) -> str:
@@ -213,9 +219,9 @@ class NumberPart(Part):
         super().__init__(key, value, requires, prefix, child, parent)
         self._label: Optional[str] = label
         self._label_suffix: Optional[str] = label_suffix
-        self._validate_start(start)
         self._start: Optional[int] = start
         self.show_start: bool = show_start
+        self.start = start
 
     @property
     def label(self) -> Optional[str]:

@@ -1,7 +1,11 @@
 import pytest
 
+from myver.error import ConfigError
 from myver.part import NumberPart, IdentifierPart
-from myver.version import Version
+from myver.version import (
+    Version, validate_requires, validate_keys,
+    set_relationships,
+)
 
 
 @pytest.fixture
@@ -62,18 +66,6 @@ def test_version_bump(semver):
     assert str(semver) == '3.10.1+dev.2'
 
 
-def test_set_parts():
-    parts = [
-        NumberPart(key='one', value=3),
-        NumberPart(key='two', value=9),
-    ]
-    version = Version()
-    version.parts = parts
-    assert len(version.parts) == 2
-    assert version.parts[0].child.key == parts[1].key
-    assert version.parts[1].parent.key == parts[0].key
-
-
 def test_get_part():
     parts = [
         NumberPart(key='one', value=3),
@@ -81,6 +73,15 @@ def test_get_part():
     ]
     version = Version(parts)
     assert version.part('one') == parts[0]
+
+
+def test_get_parts():
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+    ]
+    version = Version(parts)
+    assert version.parts == parts
 
 
 def test_get_part_key_error():
@@ -91,3 +92,72 @@ def test_get_part_key_error():
     version = Version(parts)
     with pytest.raises(KeyError):
         version.part('three')
+
+
+def test_validate_requires():
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+        NumberPart(key='three', value=2),
+    ]
+    validate_requires(parts)
+
+
+def test_validate_requires_self_reference():
+    parts = [
+        NumberPart(key='one', value=3, requires='one'),
+        NumberPart(key='two', value=9),
+        NumberPart(key='three', value=2),
+    ]
+    with pytest.raises(ConfigError):
+        validate_requires(parts)
+
+
+def test_validate_requires_invalid_key():
+    parts = [
+        NumberPart(key='one', value=3, requires='bad'),
+        NumberPart(key='two', value=9),
+        NumberPart(key='three', value=2),
+    ]
+    with pytest.raises(ConfigError):
+        validate_requires(parts)
+
+
+def test_validate_keys():
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+        NumberPart(key='three', value=2),
+    ]
+    validate_keys(parts)
+
+
+def test_validate_keys_duplicate_keys():
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+        NumberPart(key='two', value=2),
+    ]
+    with pytest.raises(ConfigError):
+        validate_keys(parts)
+
+
+def test_set_relationships():
+    parts = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+        NumberPart(key='three', value=2),
+    ]
+    assert parts[0].child is None
+    assert parts[1].child is None
+    assert parts[2].child is None
+    assert parts[0].parent is None
+    assert parts[1].parent is None
+    assert parts[2].parent is None
+    set_relationships(parts)
+    assert parts[0].child == parts[1]
+    assert parts[1].child == parts[2]
+    assert parts[2].child is None
+    assert parts[0].parent is None
+    assert parts[1].parent == parts[0]
+    assert parts[2].parent == parts[1]
