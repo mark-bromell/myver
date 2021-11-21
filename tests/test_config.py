@@ -1,8 +1,36 @@
+from pathlib import Path
+
 import pytest
 
-from myver.config import part_from_dict, version_from_dict, dict_from_file
+from myver.config import (
+    part_from_dict, version_from_dict, dict_from_file,
+    version_to_file, version_from_file,
+)
 from myver.error import ConfigError
 from myver.part import NumberPart, IdentifierPart, Part
+from myver.version import Version
+
+
+@pytest.fixture
+def sample_config(tmp_path) -> Path:
+    path = tmp_path / 'sample.yml'
+    config = """
+        parts:
+            core:
+                value: 1
+            pre:
+                value: null
+                identifier:
+                    strings: [ 'alpha', 'beta' ]
+            prenum:
+                value: null
+                number:
+                    start: 1
+    """
+    with open(path, 'w') as file:
+        file.write(config)
+
+    return path
 
 
 @pytest.mark.parametrize('part_key, part_dict, expected_part', [
@@ -137,9 +165,36 @@ def test_version_from_dict_missing_requires_attribute():
         })
 
 
-def test_dict_from_file():
-    path = 'examples/semver.yml'
-    config_dict = dict_from_file(path)
-    assert config_dict['parts']['major']
+def test_dict_from_file(sample_config):
+    config_dict = dict_from_file(str(sample_config.absolute()))
+    assert config_dict['parts']['core']
     assert config_dict['parts']['pre']['identifier']
     assert config_dict['parts']['prenum']['number']
+
+
+def test_version_from_file(sample_config):
+    version = Version([
+        NumberPart(key='core', value=1),
+        IdentifierPart(key='pre', value=None, strings=['alpha', 'beta']),
+        NumberPart(key='prenum', value=None, start=1),
+    ])
+    assert version == version_from_file(str(sample_config.absolute()))
+
+
+def test_version_to_file(sample_config):
+    version = Version([
+        NumberPart(key='core', value=2),
+        IdentifierPart(key='pre', value='alpha', strings=['alpha', 'beta']),
+        NumberPart(key='prenum', value=1, start=1),
+    ])
+    version_to_file(str(sample_config.absolute()), version)
+    assert version == version_from_file(str(sample_config.absolute()))
+
+
+def test_version_to_file_bad_config(sample_config):
+    version = Version([
+        NumberPart(key='core', value=2),
+        IdentifierPart(key='pre', value='alpha', strings=['alpha', 'beta']),
+    ])
+    with pytest.raises(ConfigError):
+        version_to_file(str(sample_config.absolute()), version)

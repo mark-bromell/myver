@@ -66,6 +66,27 @@ def test_version_bump(semver):
     assert str(semver) == '3.10.1+dev.2'
 
 
+def test_equality():
+    parts1 = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+    ]
+    version1 = Version(parts1)
+    parts2 = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=9),
+    ]
+    version2 = Version(parts2)
+    assert version1 == version2
+
+    parts2 = [
+        NumberPart(key='one', value=3),
+        NumberPart(key='two', value=10),
+    ]
+    version2 = Version(parts2)
+    assert not version1 == version2
+
+
 def test_get_part():
     parts = [
         NumberPart(key='one', value=3),

@@ -51,7 +51,13 @@ class Version:
         for part in self._parts:
             if part.key == key:
                 return part
-        raise KeyError
+        raise KeyError(key)
+
+    def __eq__(self, other: Version):
+        for this_part, other_part in zip(self.parts, other.parts):
+            if not this_part == other_part:
+                return False
+        return True
 
     def __str__(self):
         version_str = ''

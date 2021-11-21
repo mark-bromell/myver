@@ -7,8 +7,6 @@
 # the value of the given entry, and we imply the entry value due to the
 # value of other entries.
 #
-# NOTE! For developers of MyVer, this file is needed by tests, so change
-# it with caution.
 
 parts:
   major:

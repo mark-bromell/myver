@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import yaml
+import ruamel.yaml
 
 from myver.error import ConfigError
 from myver.part import Part, IdentifierPart, NumberPart
@@ -18,8 +18,51 @@ def dict_from_file(path: str) -> dict:
     :raise OSError: For other errors when accessing the file.
     """
     with open(path, 'r') as file:
-        config_dict = yaml.safe_load(file)
+        yaml = ruamel.yaml.YAML(typ='safe')
+        config_dict = yaml.load(file)
     return config_dict
+
+
+def version_to_file(path: str, version: Version):
+    """Syncs a version to a yaml file.
+
+    This will only sync the part values to the file, no other
+    configuration of the file will change. This will mean that the parts
+    in the version will need to have perfect 1:1 corresponding keys for
+    each part and within the yaml file and in the `version` param. This
+    also means that the yaml file must have existing configuration
+    details for each part in the `version` param.
+
+    :param path: The path of the yaml file.
+    :param version: The version to sync to the yaml file.
+    :raise FileNotFoundError: If the file does not exist.
+    :raise OSError: For other errors when accessing the file.
+    :raise ConfigError: When the yaml file does not have a 1:1 of keys
+        for parts compared to the `version` param.
+    """
+    try:
+        config_dict = dict_from_file(path)
+        for key, part_dict in config_dict['parts'].items():
+            config_dict['parts'][key]['value'] = version.part(key).value
+
+        yaml = ruamel.yaml.YAML()
+        with open(path, 'w') as file:
+            yaml.dump(config_dict, file)
+    except KeyError as key_error:
+        key = key_error.args[0]
+        raise ConfigError(
+            f'You must have the required attribute `{key}` configured')
+
+
+def version_from_file(path: str) -> Version:
+    """Construct version from a config dict.
+
+    :param path: The path of the yaml file.
+    :raise ConfigError: If the configuration is invalid.
+    :return: The version.
+    """
+    config_dict = dict_from_file(path)
+    return version_from_dict(config_dict)
 
 
 def version_from_dict(config_dict: dict) -> Version:
@@ -36,7 +79,8 @@ def version_from_dict(config_dict: dict) -> Version:
         return Version(parts)
     except KeyError as key_error:
         key = key_error.args[0]
-        raise ConfigError(f'You must have the required attribute `{key}`')
+        raise ConfigError(
+            f'You must have the required attribute `{key}` configured')
 
 
 def part_from_dict(key: str, config_dict: dict) -> Part:
