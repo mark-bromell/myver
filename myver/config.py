@@ -19,7 +19,7 @@ def dict_from_file(path: str) -> dict:
     """
     with open(path, 'r') as file:
         config_dict = yaml.safe_load(file)
-        return config_dict
+    return config_dict
 
 
 def version_from_dict(config_dict: dict) -> Version:
@@ -27,17 +27,27 @@ def version_from_dict(config_dict: dict) -> Version:
 
     :param config_dict: The dict with raw version config data.
     :raise ConfigError: If the configuration dict is invalid.
-    :raise KeyError: If the config is missing required attributes.
     :return: The version.
     """
-    parts: list[Part] = []
-    for part_key, part_dict in config_dict['parts'].items():
-        parts.append(part_from_dict(part_key, part_dict))
-
-    return Version(parts)
+    try:
+        parts: list[Part] = []
+        for part_key, part_dict in config_dict['parts'].items():
+            parts.append(part_from_dict(part_key, part_dict))
+        return Version(parts)
+    except KeyError as key_error:
+        key = key_error.args[0]
+        raise ConfigError(f'You must have the required attribute `{key}`')
 
 
 def part_from_dict(key: str, config_dict: dict) -> Part:
+    """Construct part from a config dict.
+
+    :param key: The part's key.
+    :param config_dict: The dict with raw part config data.
+    :raise ConfigError: If the configuration dict is invalid.
+    :raise KeyError: If the config is missing required attributes.
+    :return: The version part.
+    """
     if config_dict.get('identifier') and config_dict.get('number'):
         raise ConfigError(
             f'Part `{key}` cannot be an identifier and number at the '
@@ -60,7 +70,7 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
             label=config_dict['number'].get('label'),
             label_suffix=config_dict['number'].get('label-suffix'),
             start=config_dict['number'].get('start'),
-            show_start=config_dict['number'].get('show_start'))
+            show_start=config_dict['number'].get('show-start'))
     else:
         # Default if no type configuration is specified.
         return NumberPart(

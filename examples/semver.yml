@@ -6,6 +6,9 @@
 # An implied value means that the values of other entries are affecting
 # the value of the given entry, and we imply the entry value due to the
 # value of other entries.
+#
+# NOTE! For developers of MyVer, this file is needed by tests, so change
+# it with caution.
 
 parts:
   major:
@@ -36,8 +39,8 @@ parts:
     value: null
     # requires: null
     number:
-      # name: null
-      # name-suffix: null
+      # label: null
+      # label-suffix: null
       start: 1
       # show-start: true
 
@@ -46,8 +49,8 @@ parts:
     prefix: '+'
     # requires: null
     number:
-      name: 'build'
-      name-suffix: '.'
+      label: 'build'
+      label-suffix: '.'
       start: 1
       # show-start: true
 
@@ -56,7 +59,7 @@ parts:
     prefix: '+'
     # requires: null
     number:
-      name: 'build'
-      name-suffix: '.'
+      label: 'dev'
+      label-suffix: '.'
       start: 1
       show-start: false
