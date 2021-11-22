@@ -60,10 +60,12 @@ def test_version_bump(semver):
     assert str(semver) == '3.9.2-alpha.2'
     semver.bump(['minor'])
     assert str(semver) == '3.10.0'
+    semver.bump(['minor', 'patch'])
+    assert str(semver) == '3.11.0'
     semver.bump(['patch', 'dev'])
-    assert str(semver) == '3.10.1+dev'
+    assert str(semver) == '3.11.1+dev'
     semver.bump(['dev'])
-    assert str(semver) == '3.10.1+dev.2'
+    assert str(semver) == '3.11.1+dev.2'
 
 
 def test_equality():

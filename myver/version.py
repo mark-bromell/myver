@@ -40,7 +40,7 @@ class Version:
         :param keys: The list of part keys to bump.
         """
         for key in keys:
-            self.part(key).bump()
+            self.part(key).bump(keys)
 
     def part(self, key: str) -> Part:
         """Gets a part based on its key.

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 
 from myver.config import (
@@ -9,28 +7,6 @@ from myver.config import (
 from myver.error import ConfigError
 from myver.part import NumberPart, IdentifierPart, Part
 from myver.version import Version
-
-
-@pytest.fixture
-def sample_config(tmp_path) -> Path:
-    path = tmp_path / 'sample.yml'
-    config = """
-        parts:
-            core:
-                value: 1
-            pre:
-                value: null
-                identifier:
-                    strings: [ 'alpha', 'beta' ]
-            prenum:
-                value: null
-                number:
-                    start: 1
-    """
-    with open(path, 'w') as file:
-        file.write(config)
-
-    return path
 
 
 @pytest.mark.parametrize('part_key, part_dict, expected_part', [

@@ -78,19 +78,29 @@ class Part(abc.ABC):
         """Checks if the part's value is not None."""
         return self.value is not None
 
-    def bump(self):
-        """Bump this part's value."""
+    def bump(self, bump_keys: list[str] = None):
+        """Bump this part's value.
+
+        :param bump_keys: The keys that are being bumped.
+        """
+        bump_keys = bump_keys or []
         self.value = self.next_value()
         if self.child:
-            self.child.reset()
+            self.child.reset(bump_keys)
 
-    def reset(self):
+    def reset(self, bump_keys: list[str] = None):
         """Reset part value to the start value.
 
         Resetting the part to the start value will also make a recursive
         call to its child, resetting their values too.
+
+        :param bump_keys: The keys that are being bumped.
         """
-        if self.is_required():
+        bump_keys = bump_keys or []
+
+        # If this part is required and it's in the bump keys, we want to
+        # skip this step so that we do not get a double bump.
+        if self.is_required() and self.key not in bump_keys:
             self.value = self.start
         else:
             self.value = None
