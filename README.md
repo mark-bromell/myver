@@ -1,176 +1,339 @@
-## Examples
+# Configuration
 
-#### Example of `VERSION.cfg` file
+Here is the fields that are available in the configuration's yaml. The
+comments in this snippet may not cover the full scope of each field and
+what it entails, so we recommend reading the [Examples](#examples)
+section to further understand how myver works, and also how to know how
+the configuration affects the version
 
-This file stores the version parts current values. This is also the file
-that simbump reads in order to know what parts are available in the
-version.
-```ini
-# VERSION.cfg
-major = 3
-minor = 8
-micro = 1
-pre = 
-prenum = 
-build = 
-buildnum = 
-dev = 
+```yaml
+# required
+# Put each of your part elements inside here.
+parts:
+  # required (at least 1)
+  # This is one of our parts with its key named `main`.
+  main:
+    # string | int | null -- required
+    # If you do not define a part value, it will use the start value if
+    # it is invoked in a bump. If a part value is null, then it will not
+    # be shown in the version.
+    value: null
+
+    # string | null -- optional
+    # Defines any other part that this part requires. This means that
+    # `main` cannot exist without having its required part as a direct 
+    # child of this part. Value must be a valid part name.
+    requires: null
+
+    # string | null -- optional
+    # Parts may have a character prefix in order to visually separate
+    # them from previous parts, or to denote more meaning to the part.
+    prefix: null
+
+    # You can either have `identifier` or `number`, you cannot have
+    # both. If neither is configured, then the part will be configured
+    # as a number part, with a default start value of `0`.
+
+    # optional
+    # This configures a part to be an identifier string. You would use
+    # this when you have multiple possible strings for a part that have
+    # a chronological order between each string. A common example are
+    # the pre-release identifiers of `alpha`, `beta`, and `rc`.
+    identifier:
+      # list -- required
+      # These are the strings which should be listed in their
+      # chronological order.
+      strings: [ 'string1', 'string2' ]
+
+      # string -- optional
+      # You can define a custom start value, by default the start value
+      # will be the first value in the `strings` list. If you do define
+      # a custom start value, it needs to be a value that is also in the
+      # string list.
+      start: 'string1'
+
+    # optional
+    # This configures a part to be a number. This means that it is
+    # easily incremented, and it cannot contain alphabetic characters.
+    number:
+      # string | null -- optional
+      # Sometimes you will want a label for a number part. An example
+      # of this would be a `build` part, instead of just using a number
+      # to represent this part, you may instead see something like
+      # `build.4` as a part.
+      label: null
+
+      # string | null -- optional
+      # A label may have a suffix (characters after the label) in order
+      # to separate the label with the number. An example of this would
+      # be the `.` suffix on a `build` label, which would give something
+      # like `build.4` as a part.
+      label-suffix: null
+
+      # int -- optional
+      # When the part is reset or invoked, this is the value that the
+      # part will start at. By default, number parts start at 0.
+      start: 0
+
+      # boolean -- optional
+      # Sometimes you may not want to show the first value of a number
+      # part. An example of this would be a `dev` part, commonly you
+      # may see a version like `3.4.5+dev` which would define the first
+      # dev instance of a version, then the second dev instance would
+      # look like this `3.4.5+dev.2`.
+      show-start: true
+
 ```
 
+# Examples
 
-#### Example of `.simbump.cfg` file
+## SemVer
 
-This file handles how the version as a whole (and its parts) are 
-configured to work. Based on the parts discovered in `VERSION.cfg`,
-simbump can then specify the configs of each part.
+This file handles how the version is formed. It will store the current
+values of each part, and it will also define the configuration of each
+part.
 
-```ini
-# .simbump.cfg
-[simbump:micro]
-children =
-    pre
-    build
-    dev
+```yaml
+parts:
+  major:
+    value: 3
+    requires: minor
 
-[simbump:pre]
-children = prenum
-required = False
-prefix = -
-values = 
-    alpha
-    beta
-    rc
+  minor:
+    value: 9
+    prefix: '.'
+    requires: patch
 
-[simbump:prenum]
-children = 
-    build
-    dev
-start = 1
+  patch:
+    value: 2
+    prefix: '.'
 
-[simbump:build]
-required = False
-prefix = +
-values = build
+  pre:
+    value: null
+    prefix: '-'
+    requires: prenum
+    identifier:
+      strings: [ 'alpha', 'beta', 'rc' ]
 
-[simbump:buildnum]
-start = 1
+  prenum:
+    prefix: '.'
+    value: null
+    number:
+      start: 1
 
-[simbump:dev]
-required = False
-prefix = +
-values = dev
+  build:
+    value: null
+    prefix: '+'
+    number:
+      label: 'build'
+      label-suffix: '.'
+      start: 1
+
+  dev:
+    value: null
+    prefix: '+'
+    number:
+      label: 'build'
+      label-suffix: '.'
+      start: 1
+      show-start: false
+
 ```
 
+### Preamble
+
+In each of these scenarios we will show a snippet which is demonstrating
+how you may interact with myver in a terminal environment. There may
+then be a description of what is happening in the snippet demonstration
+below each snippet.
 
 ### Standard bumping scenarios
 
 ```shell
-simbump --current
-> 3.8.1
-simbump micro
+myver --current
 > 3.8.2
-simbump minor
+myver --bump patch
+> 3.8.3
+myver --bump minor
 > 3.9.0
 ```
-
 
 ### Bumping with non-required child
 
 ```shell
-simbump --current
-> 3.8.1
-# Reads as: bump micro, with dev
-simbump micro dev
-> 3.8.2+dev
+myver --current
+> 3.8.2
+myver --bump patch dev
+> 3.8.3+dev
 ```
 
-In this example we show how the ordering in `VERSION.cfg` of a
-non-required part can be dynamic if it is the child of multiple parts.
-The `dev` part can be a child of `micro` or `prenum`, although in
-`VERSION.cfg` we see that `dev` has 4 parts in between itself and
-`micro`! This does not matter, we can still just specify to bump `micro`
-and bring in its non-required child of `dev`.
-
-
-### Non-required part with a required child
+In this example we show how the part ordering matters in the config. We
+can see that the `dev` part is configured after the `patch` part, and
+the `patch` part does not require any other part. This means that `dev`
+is a valid child for the `patch` part.
 
 ```shell
-simbump --current
-> 3.8.1
-# Reads as: bump micro, with pre
-simbump micro pre
-> 3.8.2-alpha.1
+myver --current
+> 3.8.3+dev
+myver --bump patch
+> 3.8.4
+```
+
+It is also important to keep in mind that non-required child parts will
+be removed when its parent is bumped if you do not ask to keep the child
+part. In the above example we bump `patch` and the `dev` part gets
+removed, if we wanted to have the `dev` part in the bumped version then
+we would have to be more explicit and use `myver --bump patch dev`.
+
+### Part with a required child
+
+```shell
+myver --current
+> 3.8.2
+myver --bump patch pre
+> 3.8.3-alpha.1
 ```
 
 We see that specifying `pre` to be brought along with the bump of
-`micro`, also brings along `prenum`. By default, every part is required,
-but we configured `pre` to not be required, so when it is brought along
-manually with a bump, any required parts in its descendants must be
-brought along too.
+`patch`, also brings along `prenum`. This is because `prenum` is
+configured to be required by `pre`.
 
-
-### Non-required children and descendant chaining
-
-```shell
-simbump --current
-> 3.8.1
-# Reads as: bump micro, with pre, with dev
-simbump micro pre dev
-> 3.8.2-alpha.1+dev
-```
-
-Now it is getting a bit tricky, but it brings to light
-the way part relationships work. When bumping `micro` with `pre`, the
-`pre` will bring along its `prenum` child since it is a
-required part. Although how did we bring along `dev` with
-`prenum` if we do not specify `prenum` in the arguments of the command?
-It is because `dev` may not be a child of `pre`, but it is still a
-valid descendant, and `dev` will chain to the final descendant of the
-`pre` part **only** if it can be a child of that final descendant. The
-final descendant of `pre` in this scenario was `prenum` - and `dev`
-can be a child of `prenum`.
-
+Also note that having a null part and attempting to bump it will set it
+at its starting value, and it will bring along its required child if it
+has one. A starting value by default is the first value in the list of
+its `strings` in the `identifier` configuration. In this case we see
+that `pre` starts with the value of `alpha`. If it is a number part then
+the start value is `0` by default.
 
 ### Manually set the value of a string part
 
 ```shell
-simbump --current
-> 3.8.1
-# Reads as: bump minor, with pre as 'beta'
-simbump minor pre --as beta
+myver --current
+> 3.8.2
+myver --bump minor pre=beta
 > 3.9.0-beta.1
+myver --bump patch=5
+> 3.9.5
 ```
 
 ```shell
-# You can still do descendant chaining
-simbump --current
-> 3.8.1
-# Reads as: bump minor, with pre as 'beta', with dev
-simbump minor pre --as beta dev
+myver --current
+> 3.8.2
+myver --bump minor pre=beta dev
 > 3.9.0-beta.1+dev
 ```
 
 Sometimes you may not want to use the start value of a string part. Here
-we see that `pre` is a string part (which is implied through its 
-`values` list of strings in the config). By providing the `--as`
-option directly after `pre`, it will use that `--as` value for the `pre`
-part, in this case it is `beta`, which is skipping the
-`alhpa` value. It is important that you specify a part value that is
-valid (i.e. it is in the `values` list in the config of the part)
+we see that `pre` is an identifier part (which is implied through having
+its `identifier` configuration). By providing the `'='` character and a
+valid identifier directly after `pre`, it will use that identifier value
+for the `pre` part, in this case it is `beta`, which is skipping
+the `alhpa` value. It is important that you specify a part value that is
+valid (i.e. it is in the `strings` list in the `identifier`
+configuration of the part)
 
-
-## Option `--delete`
+### Deleting optional part
 
 ```shell
-simbump --current
-> 3.9.0-beta.1+dev
-simbump --delete pre
+myver --current
+> 3.9.0-beta.1+build.34
+myver --delete pre
 > 3.9.0
 ```
 
+You may want to remove a part, this can easily be done with the
+`--delete` option. In the above scenario we see that deleting an
+optional part will also delete its descendants. Although we can keep a
+descendant if we use `--bump`.
+
 ```shell
-simbump --current
+myver --current
 > 3.9.0-beta.1+build.34
-simbump --delete pre --keep build
+myver --delete pre --bump build
 > 3.9.0+build.1
 ```
+
+### Implicit children
+
+This may not even need to be explained as it is supposed to be
+intuitive, although I am including this section just to explain the
+implicit children in a technical way so that people can debug any of
+their use cases which may be acting weird due to this feature. So you do
+not have to understand this section to make use of implicit children, it
+should hopefully come to you naturally.
+
+```shell
+myver --current
+> 3.8.2+build.1
+# Reads as: bump patch, with pre, with dev
+myver --bump dev
+> 3.8.2+build.1-dev
+```
+
+This is the clearest example of implicit children, in the config we do
+not explicitly define the `dev` part to be required by the `buildnum`
+part, yet it becomes a child of `buildnum` when we add `dev` in a bump.
+This is due to the order of the parts in the config, and also due to
+`dev` not being a required child of any other parts, so the only logical
+place to put the `dev` part is after the last part that has a value,
+which in this case is `buildnum`.
+
+```shell
+myver --current
+> 3.8.2+build.1-dev
+# Reads as: bump patch, with pre, with dev
+myver --bump buildnum
+> 3.8.2+build.2
+```
+
+Also keep in mind that implicit children will be removed if their parent
+is bumped. In the above example if you wanted to keep `dev` you need to
+be explicit and use `myver --bump buildnum dev`
+
+```shell
+myver --current
+> 3.8.2
+# Reads as: bump patch, with pre, with dev
+myver --bump patch pre dev
+> 3.8.3-alpha.1+dev
+```
+
+When bumping `patch` with `pre`, the `pre` will bring along its `prenum`
+child since it is a required part. Although how did we bring along `dev`
+with `prenum` if we do not specify `prenum` in the arguments of the
+command? In this scenario we can say that `dev` is implicitly a child of
+the `prenum` part, and this happens due to `prenum` being a required
+child of `pre`, and `prenum` is also defined before the `dev` part is
+defined in the config, so it takes precedence.
+
+So why are we allowed to ignore the `build` part? It's because
+the `build` part is not required by any other part that is current set.
+
+```shell
+myver --current
+> 3.8.3-alpha.1+dev
+# Reads as: bump build
+myver --bump build
+> 3.8.3-alpha.1+build.1
+```
+
+Why did the `dev` part get removed in this case? This is because of the
+ordering of the parts in the config. When an implicit parent-child
+relationship is broken, the original child part is removed. In this
+scenario the `prenum` and `dev` implicit relationship is broken because
+adding the `build` and `buildnum` part introduces a new implicit child
+for `prenum`. The `build` part is defined in the config before `dev` is
+defined, so it takes precedence, which is why we do not get a new
+version of something like `3.8.3-alpha.1+dev-build.1`
+
+This scenario is a simple config, so it may be reasonable to think that
+we should just keep the `dev` and make it a child of the `buildnum`
+part, but what happens in more complex scenarios with many possible
+implicit children? Also, it is not a good thing to freely shift parts
+around as a side effect of bumping other parts, the command should
+explicitly ask for a version outcome. In other words, having `dev` as a
+child of one part, has no chronological relation with a different part
+having `dev` as its child, they are both dev instances of completely
+different versions. Since `myver --bump build` does not explicitly ask
+for `dev` to be in the bumped version, then we should not provide a
+version that is not explicitly asked for.

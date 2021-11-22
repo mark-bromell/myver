@@ -1,0 +1,63 @@
+# Commented out entries are implied / defaults.
+#
+# A default value for an entry means that it is that value without any
+# other entry being considered to determine the entries value.
+#
+# An implied value means that the values of other entries are affecting
+# the value of the given entry, and we imply the entry value due to the
+# value of other entries.
+#
+
+parts:
+  major:
+    value: 3
+    # prefix: null
+    requires: minor
+
+  minor:
+    value: 9
+    prefix: '.'
+    requires: patch
+
+  patch:
+    value: 2
+    prefix: '.'
+    # requires: null
+
+  pre:
+    value: null
+    prefix: '-'
+    requires: prenum
+    identifier:
+      strings: [ 'alpha', 'beta', 'rc' ]
+      # start: 'alpha'
+
+  prenum:
+    value: null
+    prefix: '.'
+    # requires: null
+    number:
+      # label: null
+      # label-suffix: null
+      start: 1
+      # show-start: true
+
+  build:
+    value: null
+    prefix: '+'
+    # requires: null
+    number:
+      label: 'build'
+      label-suffix: '.'
+      start: 1
+      # show-start: true
+
+  dev:
+    value: null
+    prefix: '+'
+    # requires: null
+    number:
+      label: 'dev'
+      label-suffix: '.'
+      start: 1
+      show-start: false

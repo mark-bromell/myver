@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "JSON schema for myver configuration files.",
+  "type": "object",
+  "definitions": {
+    "part": {
+      "description": "Configuration of a single version part.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "The actual value of a part.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "requires": {
+          "description": "Defines another part this this part requires. If this value is specified, it means that the part that is required will always be set as long as this part is set.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prefix": {
+          "description": "The prefix string for the part.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "identifier": {
+          "$ref": "#/definitions/identifier"
+        },
+        "number": {
+          "$ref": "#/definitions/number"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "not": {
+        "required": [
+          "identifier",
+          "number"
+        ]
+      }
+    },
+    "identifier": {
+      "description": "This configures a part to be an identifier string. You would use this when you have multiple possible strings for a part that have a chronological order between each string. A common example are the pre-release identifiers of `alpha`, `beta`, and `rc`.",
+      "type": "object",
+      "properties": {
+        "strings": {
+          "description": "These are the strings which should be listed in their chronological order.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "(?!null)"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "start": {
+          "description": "You can define a custom start value, by default the start value will be the first value in the `strings` list. If you do define a custom start value, it needs to be a value that is also in the string list.",
+          "type": "string"
+        }
+      }
+    },
+    "number": {
+      "description": "This configures a part to be a number. This means that it is easily incremented, and it cannot contain alphabetic characters.",
+      "type": "object",
+      "properties": {
+        "label": {
+          "description": "Sometimes you will want a label for a number part. An example of this would be a `build` part, instead of just using a number to represent this part, you may instead see something like `build.4` as a part.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "label-suffix": {
+          "description": "A label may have a suffix (characters after the label) in order to separate the label with the number. An example of this would be the `.` suffix on a `build` label, which would give something like `build.4` as a part.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start": {
+          "description": "When the part is reset or invoked, this is the value that the part will start at. By default, number parts start at 0.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "show-start": {
+          "description": "Sometimes you may not want to show the first value of a number part. An example of this would be a `dev` part, commonly you may see a version like `3.4.5+dev` which would define the first dev instance of a version, then the second dev instance would look like this `3.4.5+dev.2`.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start"
+      ]
+    }
+  },
+  "properties": {
+    "parts": {
+      "description": "The collections of all part configurations.",
+      "type": "object",
+      "patternProperties": {
+        "^[_a-zA-Z][a-zA-Z0-9_-]*$": {
+          "$ref": "#/definitions/part"
+        }
+      },
+      "minProperties": 1
+    }
+  },
+  "required": [
+    "parts"
+  ]
+}
