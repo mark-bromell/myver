@@ -3,9 +3,9 @@ name: Upload Python Package
 on:
   release:
     types: [ published, created, released ]
-#  push:
-#    tags:
-#      - v*
+  push:
+    tags:
+      - v*
 
 jobs:
   deploy:
