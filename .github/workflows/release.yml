@@ -1,9 +1,11 @@
-name: 'Upload Python Package'
+name: Upload Python Package
 
 on:
-  push:
-    tags:
-      - v*
+  release:
+    types: [ published, created, released ]
+#  push:
+#    tags:
+#      - v*
 
 jobs:
   deploy:
