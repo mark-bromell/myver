@@ -1,5 +1,5 @@
 build: clean
-	python setup.py sdist bdist_wheel
+	python -m build
 	twine check dist/*
 
 clean: clean-build clean-pyc clean-test clean-coverage
@@ -22,7 +22,7 @@ clean-coverage:
 	- rm -rf htmlcov/
 
 lint:
-	flake8 myver/ tests/
+	flake8 myver/ tests/ --max-complexity=10 --max-line-length=127
 
 test:
 	python -m pytest tests/
