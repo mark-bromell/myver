@@ -205,7 +205,7 @@ its `strings` in the `identifier` configuration. In this case we see
 that `pre` starts with the value of `alpha`. If it is a number part then
 the start value is `0` by default.
 
-### Manually set the value of a string part
+### Value overriding
 
 ```shell
 myver --current
@@ -216,13 +216,6 @@ myver --bump patch=5
 > 3.9.5
 ```
 
-```shell
-myver --current
-> 3.8.2
-myver --bump minor pre=beta dev
-> 3.9.0-beta.1+dev
-```
-
 Sometimes you may not want to use the start value of a string part. Here
 we see that `pre` is an identifier part (which is implied through having
 its `identifier` configuration). By providing the `'='` character and a
@@ -231,6 +224,11 @@ for the `pre` part, in this case it is `beta`, which is skipping
 the `alhpa` value. It is important that you specify a part value that is
 valid (i.e. it is in the `strings` list in the `identifier`
 configuration of the part)
+
+We can also do the same for number parts, above we see that we used
+value overriding to set `patch` to `5`. For a number part, you cannot
+set the value to a negative number, and it cannot be a string either, it
+must be an integer.
 
 ### Deleting optional part
 

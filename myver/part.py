@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from typing import Optional, Union
 
-from myver.error import ConfigError
+from myver.error import ConfigError, BumpError
 
 
 class Part(abc.ABC):
@@ -33,8 +33,11 @@ class Part(abc.ABC):
         self.parent = parent
 
     @abc.abstractmethod
-    def next_value(self) -> Optional[Union[str, int]]:
-        """Get the next part value."""
+    def next_value(self, value_override: str = None):
+        """Set current value to the next part value.
+
+        :param value_override: Manual override for the bumped value.
+        """
 
     @property
     @abc.abstractmethod
@@ -78,15 +81,16 @@ class Part(abc.ABC):
         """Checks if the part's value is not None."""
         return self.value is not None
 
-    def bump(self, bump_keys: list[str] = None):
+    def bump(self, bump_args: list[str] = None, value_override: str = None):
         """Bump this part's value.
 
-        :param bump_keys: The keys that are being bumped.
+        :param bump_args: The bump arguments.
+        :param value_override: Manual override for the bumped value.
         """
-        bump_keys = bump_keys or []
-        self.value = self.next_value()
+        bump_args = bump_args or []
+        self.next_value(value_override)
         if self.child:
-            self.child.reset(bump_keys)
+            self.child.reset(bump_args)
 
     def reset(self, bump_keys: list[str] = None):
         """Reset part value to the start value.
@@ -179,6 +183,25 @@ class IdentifierPart(Part):
         self._validate_start(new_start)
         self._start = new_start
 
+    def next_value(self, value_override: str = None):
+        if value_override is not None:
+            if value_override not in self.strings:
+                raise BumpError(
+                    f'Cannot set value override `{value_override}`, it must '
+                    f'be in the strings list of part `{self.key}`')
+            else:
+                self.value = value_override
+        elif self.is_set():
+            current_index = self.strings.index(self.value)
+            next_index = current_index + 1
+
+            if next_index < len(self.strings):
+                self.value = self.strings[next_index]
+            else:
+                self.value = None
+        else:
+            self.value = self.start
+
     def _validate_start(self, start: Optional[str]):
         if start is not None and start not in self.strings:
             raise ConfigError(
@@ -190,17 +213,6 @@ class IdentifierPart(Part):
             raise ConfigError(
                 f'Part `{self.key}` has an `identifier.strings` has an empty '
                 f'list, the list must have at least one string')
-
-    def next_value(self) -> Optional[str]:
-        if self.is_set():
-            current_index = self.strings.index(self.value)
-            next_index = current_index + 1
-
-            if next_index < len(self.strings):
-                return self.strings[next_index]
-            return None
-        else:
-            return self.start
 
 
 class NumberPart(Part):
@@ -258,11 +270,24 @@ class NumberPart(Part):
         self._validate_start(new_start)
         self._start = new_start
 
-    def next_value(self) -> Optional[int]:
-        if self.is_set():
-            return self.value + 1
+    def next_value(self, value_override: str = None):
+        if value_override is not None:
+            try:
+                int(value_override)
+            except ValueError:
+                raise BumpError(
+                    f'Value override `{value_override}` must be a number for '
+                    f'part `{self.key}`')
+
+            if int(value_override) < 0:
+                raise BumpError(
+                    f'Cannot set value override to a negative number '
+                    f'`{value_override}` for part `{self.key}`')
+            self.value = int(value_override)
+        elif self.is_set():
+            self.value = self.value + 1
         else:
-            return self.start
+            self.value = self.start
 
     def _validate_start(self, start: Optional[int]):
         if start is not None:

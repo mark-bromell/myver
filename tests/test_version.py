@@ -1,6 +1,6 @@
 import pytest
 
-from myver.error import ConfigError
+from myver.error import ConfigError, BumpError
 from myver.part import NumberPart, IdentifierPart
 from myver.version import (
     Version, validate_requires, validate_keys,
@@ -31,12 +31,14 @@ def semver() -> Version:
             key='pre',
             value='alpha',
             prefix='-',
+            requires='prenum',
             strings=['alpha', 'beta', 'rc'],
         ),
         NumberPart(
             key='prenum',
             value=1,
             prefix='.',
+            start=1,
         ),
         NumberPart(
             key='dev',
@@ -55,17 +57,36 @@ def test_version_str(semver):
     assert str(semver) == '3.9.2-alpha.1'
 
 
-def test_version_bump(semver):
+@pytest.mark.parametrize('args, version_str', [
+    (['prenum'], '3.9.2-alpha.2'),
+    (['minor'], '3.10.0'),
+    (['minor', 'patch'], '3.10.0'),
+    (['patch', 'dev'], '3.9.3+dev'),
+    (['dev'], '3.9.2-alpha.1+dev'),
+    (['minor', 'pre=rc'], '3.10.0-rc.1'),
+])
+def test_version_bump(args, version_str, semver):
+    """Testing arbitrary bumping scenarios."""
+    semver.bump(args)
+    assert str(semver) == version_str
+
+
+def test_version_bump_manual_value(semver):
     semver.bump(['prenum'])
     assert str(semver) == '3.9.2-alpha.2'
-    semver.bump(['minor'])
-    assert str(semver) == '3.10.0'
-    semver.bump(['minor', 'patch'])
-    assert str(semver) == '3.11.0'
-    semver.bump(['patch', 'dev'])
-    assert str(semver) == '3.11.1+dev'
-    semver.bump(['dev'])
-    assert str(semver) == '3.11.1+dev.2'
+    semver.bump(['pre=rc'])
+    assert str(semver) == '3.9.2-rc.1'
+    semver.bump(['prenum=5'])
+    assert str(semver) == '3.9.2-rc.5'
+
+    with pytest.raises(BumpError):
+        semver.bump(['pre=wrong'])
+    with pytest.raises(BumpError):
+        semver.bump(['pre=rc=alpha'])
+    with pytest.raises(BumpError):
+        semver.bump(['prenum=-5'])
+    with pytest.raises(BumpError):
+        semver.bump(['prenum=wrong'])
 
 
 def test_equality():

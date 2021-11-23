@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from myver.error import ConfigError
+from myver.error import ConfigError, BumpError
 from myver.part import Part
 
 
@@ -34,13 +34,24 @@ class Version:
         self._parts = new_parts
         set_relationships(self._parts)
 
-    def bump(self, keys: list[str]):
-        """Bump the version based on part keys.
+    def bump(self, args: list[str]):
+        """Bump the version based on bumping args.
 
-        :param keys: The list of part keys to bump.
+        :param args: The list of part keys to bump. An arg may have a
+            key value pair with the syntax of `<key>=<value>`.
+        :raise BumpError: When the bumping fails.
         """
-        for key in keys:
-            self.part(key).bump(keys)
+        for arg in args:
+            if arg.count('=') > 1:
+                raise BumpError(
+                    f'The bump arg `{arg}` contains more than 1 `=` symbol, '
+                    f'there can only be 0 or 1 `=` symbol in the bump arg')
+            elif arg.count('=') == 1:
+                key = arg.split('=')[0]
+                value_override = arg.split('=')[1]
+                self.part(key).bump(args, value_override)
+            else:
+                self.part(arg).bump(args)
 
     def part(self, key: str) -> Part:
         """Gets a part based on its key.
