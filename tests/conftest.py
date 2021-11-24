@@ -1,3 +1,4 @@
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -6,19 +7,22 @@ import pytest
 @pytest.fixture
 def sample_config(tmp_path) -> Path:
     path = tmp_path / 'sample.yml'
-    config = """
+    config = textwrap.dedent("""\
+        # line comment
         parts:
             core:
                 value: 1
+
             pre:
                 value: null
-                identifier:
+                identifier: # in-line comment
                     strings: [ 'alpha', 'beta' ]
+
             prenum:
                 value: null
                 number:
                     start: 1
-    """
+    """)
     with open(path, 'w') as file:
         file.write(config)
 
@@ -28,7 +32,7 @@ def sample_config(tmp_path) -> Path:
 @pytest.fixture
 def semver_config(tmp_path) -> Path:
     path = tmp_path / 'semver.yml'
-    config = """
+    config = textwrap.dedent("""\
         parts:
             major:
                 value: 3
@@ -72,7 +76,7 @@ def semver_config(tmp_path) -> Path:
                     label-suffix: '.'
                     start: 1
                     show-start: false
-    """
+    """)
     with open(path, 'w') as file:
         file.write(config)
 

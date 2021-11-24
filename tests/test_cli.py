@@ -2,7 +2,8 @@ from myver.__main__ import main
 
 
 def test_bump_option(semver_config, capsys):
-    main(['--config', str(semver_config.absolute()), '--bump', 'major'])
+    main(['--config', str(semver_config.absolute()),
+          '--bump', 'major'])
     captured = capsys.readouterr()
     assert captured.out == '3.9.2  >>  4.0.0\n'
 

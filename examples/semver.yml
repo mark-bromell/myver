@@ -6,7 +6,6 @@
 # An implied value means that the values of other entries are affecting
 # the value of the given entry, and we imply the entry value due to the
 # value of other entries.
-#
 
 parts:
   major:

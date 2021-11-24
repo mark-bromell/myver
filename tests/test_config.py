@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 
 from myver.config import (
@@ -165,6 +167,28 @@ def test_version_to_file(sample_config):
     ])
     version_to_file(str(sample_config.absolute()), version)
     assert version == version_from_file(str(sample_config.absolute()))
+
+
+def test_version_to_file_preserve_formatting(sample_config):
+    version = version_from_file(str(sample_config.absolute()))
+    version_to_file(str(sample_config.absolute()), version)
+    with open(sample_config, 'r') as file:
+        assert file.read() == textwrap.dedent("""\
+            # line comment
+            parts:
+                core:
+                    value: 1
+    
+                pre:
+                    value: null
+                    identifier: # in-line comment
+                        strings: [ 'alpha', 'beta' ]
+    
+                prenum:
+                    value: null
+                    number:
+                        start: 1
+        """)
 
 
 def test_version_to_file_bad_config(sample_config):

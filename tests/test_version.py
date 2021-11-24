@@ -62,6 +62,7 @@ def test_version_str(semver):
     (['minor'], '3.10.0'),
     (['minor', 'patch'], '3.10.0'),
     (['patch', 'dev'], '3.9.3+dev'),
+    (['patch', 'pre', 'dev'], '3.9.3-alpha.1+dev'),
     (['dev'], '3.9.2-alpha.1+dev'),
     (['minor', 'pre=rc'], '3.10.0-rc.1'),
 ])

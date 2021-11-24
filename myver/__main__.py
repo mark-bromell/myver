@@ -28,6 +28,7 @@ def _parse_args(args):
     parser.add_argument(
         '-b', '--bump',
         help='bump version parts',
+        metavar='ARG',
         required=False,
         action='extend',
         nargs='+',

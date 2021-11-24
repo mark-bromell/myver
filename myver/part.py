@@ -23,12 +23,12 @@ class Part(abc.ABC):
                  prefix: Optional[str] = None,
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None):
-        self._prefix: Optional[str] = prefix
-        self._child: Optional[Part] = None
-        self._parent: Optional[Part] = None
+        self.prefix: str = prefix or ''
         self.key: str = key
         self.value: Optional[Union[str, int]] = value
         self.requires: Optional[str] = requires
+        self._child: Optional[Part] = None
+        self._parent: Optional[Part] = None
         self.child = child
         self.parent = parent
 
@@ -48,14 +48,6 @@ class Part(abc.ABC):
     @abc.abstractmethod
     def start(self, new_start: Union[str, int]):
         """Set the start value"""
-
-    @property
-    def prefix(self) -> str:
-        return self._prefix or ''
-
-    @prefix.setter
-    def prefix(self, new_prefix: Optional[str]):
-        self._prefix = new_prefix
 
     @property
     def child(self) -> Optional[Part]:
@@ -92,19 +84,19 @@ class Part(abc.ABC):
         if self.child:
             self.child.reset(bump_args)
 
-    def reset(self, bump_keys: list[str] = None):
+    def reset(self, bump_args: list[str] = None):
         """Reset part value to the start value.
 
         Resetting the part to the start value will also make a recursive
         call to its child, resetting their values too.
 
-        :param bump_keys: The keys that are being bumped.
+        :param bump_args: The keys that are being bumped.
         """
-        bump_keys = bump_keys or []
+        bump_args = bump_args or []
 
         # If this part is required and it's in the bump keys, we want to
         # skip this step so that we do not get a double bump.
-        if self.is_required() and self.key not in bump_keys:
+        if self.is_required() and self.key not in bump_args:
             self.value = self.start
         else:
             self.value = None
@@ -237,29 +229,16 @@ class NumberPart(Part):
                  label: Optional[str] = None,
                  label_suffix: Optional[str] = None,
                  start: int = None,
-                 show_start: bool = True):
+                 show_start: bool = None):
         super().__init__(key, value, requires, prefix, child, parent)
-        self._label: Optional[str] = label
-        self._label_suffix: Optional[str] = label_suffix
+        self.label: Optional[str] = label or ''
+        self.label_suffix: Optional[str] = label_suffix or ''
+        if show_start is None:
+            self.show_start: bool = True
+        else:
+            self.show_start: bool = show_start
         self._start: Optional[int] = start
-        self.show_start: bool = show_start
         self.start = start
-
-    @property
-    def label(self) -> Optional[str]:
-        return self._label or ''
-
-    @label.setter
-    def label(self, new_label: str):
-        self._label = new_label
-
-    @property
-    def label_suffix(self) -> Optional[str]:
-        return self._label_suffix or ''
-
-    @label_suffix.setter
-    def label_suffix(self, new_label_suffix: str):
-        self._label_suffix = new_label_suffix
 
     @property
     def start(self) -> int:

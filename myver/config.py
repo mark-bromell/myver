@@ -18,7 +18,7 @@ def dict_from_file(path: str) -> dict:
     :raise OSError: For other errors when accessing the file.
     """
     with open(path, 'r') as file:
-        yaml = ruamel.yaml.YAML(typ='safe')
+        yaml = ruamel.yaml.YAML()
         config_dict = yaml.load(file)
     return config_dict
 
@@ -41,17 +41,76 @@ def version_to_file(path: str, version: Version):
         for parts compared to the `version` param.
     """
     try:
-        config_dict = dict_from_file(path)
-        for key, part_dict in config_dict['parts'].items():
-            config_dict['parts'][key]['value'] = version.part(key).value
-
-        yaml = ruamel.yaml.YAML()
-        with open(path, 'w') as file:
-            yaml.dump(config_dict, file)
+        _update_file_values(path, version)
     except KeyError as key_error:
         key = key_error.args[0]
         raise ConfigError(
             f'You must have the required attribute `{key}` configured')
+
+
+def _update_file_values(path: str, version: Version):
+    """Update config file part based on `version` object.
+
+    :param path: The path to the config file.
+    :param version: The version to persist to the file.
+    """
+    update_map = _get_value_update_map(path, version)
+
+    # We need the lines to rewrite the changes later.
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    with open(path, 'w') as file:
+        for index, value in update_map.items():
+            indent_length = len(lines[index]) - len(lines[index].lstrip())
+            lines[index] = f'{" " * indent_length}value: {value}\n'
+
+        file.writelines(lines)
+
+
+def _get_value_update_map(path: str, version: Version) -> dict[int, str]:
+    """Get an update map for version values in a config file.
+
+    :param path: The path to the config file.
+    :param version: The version to persist to the file.
+    :return: A dict with each key in the dict represents the index in
+        the lines list to update (based on index counter starting at 0).
+        The value of each entry in the dict represents a part's value to
+        be updated at the given line index.
+    """
+    config_dict = dict_from_file(path)
+    update_map = dict()
+
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+        for key in config_dict['parts'].keys():
+            # We want to start at the part's key so that the next
+            # `value` node is guaranteed to be the part's `value` node.
+            from_index = config_dict['parts'][key].lc.line
+            # Note, it's an index (as related to list indexes) and not
+            # a line number.
+            line_index = _find_value_node_index(lines, from_index)
+            part = version.part(key)
+
+            if part.value is None:
+                update_map[line_index] = 'null'
+            else:
+                update_map[line_index] = part.value
+
+    return update_map
+
+
+def _find_value_node_index(lines: list[str], from_index: int) -> int:
+    """Find the line index for the `value` node.
+
+    :param lines: The lines to read from in order to get the index.
+    :param from_index: The index to start searching from.
+    :return: The index of where the `value` node is.
+    """
+    for i, line in enumerate(lines[from_index:]):
+        if line.lstrip().startswith('value:'):
+            return i + from_index
 
 
 def version_from_file(path: str) -> Version:
