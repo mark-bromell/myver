@@ -25,8 +25,8 @@ lint:
 	flake8 myver/ tests/ --max-complexity=10 --max-line-length=127
 
 test:
-	python -m pytest tests/
+	python -m pytest -v -rfEs ./tests/
 
 coverage: clean-coverage
-	coverage run --source=myver/ --branch -m pytest tests/
+	coverage run --source=myver/ -m pytest -v -rfEs tests/
 	coverage html -d htmlcov/
