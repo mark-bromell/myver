@@ -1,3 +1,12 @@
+# MyVer
+
+[![Build Status][workflow-badge]][workflow-link]
+[![Coverage][coverage-badge]][coverage-link]
+[![Version][version-badge]][version-link]
+[![MIT License][license-badge]](LICENSE.md)
+
+---
+
 # Configuration
 
 Here is the fields that are available in the configuration's yaml. The
@@ -335,3 +344,18 @@ having `dev` as its child, they are both dev instances of completely
 different versions. Since `myver --bump build` does not explicitly ask
 for `dev` to be in the bumped version, then we should not provide a
 version that is not explicitly asked for.
+
+
+[version-badge]: https://img.shields.io/pypi/v/myver.svg?label=version
+
+[version-link]: https://pypi.python.org/pypi/myver/
+
+[coverage-badge]: https://coveralls.io/repos/github/mark-bromell/myver/badge.svg?branch=main
+
+[coverage-link]: https://coveralls.io/github/mark-bromell/myver?branch=main
+
+[workflow-badge]: https://github.com/mark-bromell/myver/workflows/Tests/badge.svg
+
+[workflow-link]: https://github.com/mark-bromell/myver/actions?query=workflow%3ATests
+
+[license-badge]: https://img.shields.io/badge/license-MIT-007EC7.svg
