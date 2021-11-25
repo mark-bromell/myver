@@ -48,14 +48,14 @@ def semver_config(tmp_path) -> Path:
                 prefix: '.'
 
             pre:
-                value: null
+                value: alpha
                 prefix: '-'
                 requires: prenum
                 identifier:
                     strings: [ 'alpha', 'beta', 'rc' ]
 
             prenum:
-                value: null
+                value: 1
                 prefix: '.'
                 number:
                     start: 1

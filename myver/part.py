@@ -105,7 +105,13 @@ class Part(abc.ABC):
             self.child.reset()
 
     def is_required(self) -> bool:
-        """Checks if this part is required by any parents."""
+        """Checks if this part is required by any parents.
+
+        If this part has no parent, then it is assumed to be required
+        since it means that it is the head of the version.
+        """
+        if self.parent is None:
+            return True
         return self._parent_requires(self.key)
 
     def _parent_requires(self, key: str) -> bool:

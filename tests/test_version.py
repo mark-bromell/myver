@@ -90,6 +90,18 @@ def test_version_bump_manual_value(semver):
         semver.bump(['prenum=wrong'])
 
 
+@pytest.mark.parametrize('parts, version_str', [
+    (['prenum'], '3.9.2-alpha.1'),
+    (['pre'], '3.9.2'),
+    (['minor'], '3.0.0'),
+    (['major'], '0.0.0'),
+])
+def test_version_reset(parts, version_str, semver):
+    """Testing arbitrary resetting scenarios."""
+    semver.reset(parts)
+    assert str(semver) == version_str
+
+
 def test_equality():
     parts1 = [
         NumberPart(key='one', value=3),

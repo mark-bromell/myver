@@ -21,10 +21,23 @@ def main(input_args=None):
         new_version_str = str(version)
         _save_version(version, args.config)
         print(f'{old_version_str}  >>  {new_version_str}')
+    if args.reset:
+        version = _current_version(args.config)
+        old_version_str = str(version)
+        version.reset(args.reset)
+        new_version_str = str(version)
+        _save_version(version, args.config)
+        print(f'{old_version_str}  >>  {new_version_str}')
 
 
 def _parse_args(args):
     parser = argparse.ArgumentParser(prog='myver')
+    parser.add_argument(
+        '-c', '--current',
+        help='get the current version',
+        required=False,
+        action='store_true',
+    )
     parser.add_argument(
         '-b', '--bump',
         help='bump version parts',
@@ -35,10 +48,13 @@ def _parse_args(args):
         type=str,
     )
     parser.add_argument(
-        '-c', '--current',
-        help='get the current version',
+        '-r', '--reset',
+        help='reset version parts',
+        metavar='PART',
         required=False,
-        action='store_true',
+        action='extend',
+        nargs='+',
+        type=str,
     )
     parser.add_argument(
         '--config',

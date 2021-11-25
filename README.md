@@ -239,24 +239,24 @@ value overriding to set `patch` to `5`. For a number part, you cannot
 set the value to a negative number, and it cannot be a string either, it
 must be an integer.
 
-### Deleting optional part
+### Resetting optional part
 
 ```shell
 myver --current
 > 3.9.0-beta.1+build.34
-myver --delete pre
+myver --reset pre
 > 3.9.0
 ```
 
 You may want to remove a part, this can easily be done with the
-`--delete` option. In the above scenario we see that deleting an
-optional part will also delete its descendants. Although we can keep a
+`--reset` option. In the above scenario we see that resetting an
+optional part will also reset its descendants. Although we can keep a
 descendant if we use `--bump`.
 
 ```shell
 myver --current
 > 3.9.0-beta.1+build.34
-myver --delete pre --bump build
+myver --reset pre --bump build
 > 3.9.0+build.1
 ```
 

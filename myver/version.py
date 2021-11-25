@@ -53,6 +53,16 @@ class Version:
             else:
                 self.part(arg).bump(args)
 
+    def reset(self, keys: list[str]):
+        """Reset parts based on their keys.
+
+        :param keys: The keys of the parts to reset.
+        :raise KeyError: If a key in the `keys` list does not reference
+            a valid part in the version.
+        """
+        for key in keys:
+            self.part(key).reset()
+
     def part(self, key: str) -> Part:
         """Gets a part based on its key.
 
