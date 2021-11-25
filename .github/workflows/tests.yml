@@ -10,7 +10,7 @@ env:
   PYTHON_LATEST: '3.10'
 
 jobs:
-  build:
+  tests:
 
     runs-on: ubuntu-latest
     strategy:
@@ -31,6 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          python -m pip install build twine
 
       - name: Lint
         run: |
@@ -39,8 +40,16 @@ jobs:
           # exit-zero treats all errors as warnings.
           flake8 myver/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+      - name: Build package
+        run: python -m build
+
+      - name: Verify build
+        run: twine check dist/*
+
       - name: Test
-        run: coverage run --source=myver/ -m pytest -v -rfEs tests/
+        run: |
+          coverage run --source=myver/ -m pytest -v -rfEs tests/
+          coverage report
 
       - name: Post coverage results
         if: matrix.python-version == env.PYTHON_LATEST
