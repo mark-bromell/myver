@@ -1,7 +1,6 @@
 [run]
 include =
     myver/*
-    tests/*
 omit =
     myver/__main__.py
 branch = True
