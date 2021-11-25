@@ -1,4 +1,4 @@
-from myver.__main__ import main
+from myver.cli import main
 
 
 def test_current_option(semver_config, capsys):
@@ -15,6 +15,7 @@ def test_bump_option(semver_config, capsys):
 
 
 def test_reset_option(semver_config, capsys):
+
     main(['--config', str(semver_config.absolute()),
           '--reset', 'pre'])
     captured = capsys.readouterr()

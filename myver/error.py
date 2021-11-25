@@ -1,16 +1,13 @@
-class Error(Exception):
+class MyverError(Exception):
     """Configuration is invalid."""
     def __init__(self, message: str):
         self.message: str = message
         super().__init__()
 
-    def __str__(self):
-        return self.message
 
-
-class ConfigError(Error):
+class ConfigError(MyverError):
     """Configuration is invalid."""
 
 
-class BumpError(Error):
+class BumpError(MyverError):
     """Bumping a version or part failed."""

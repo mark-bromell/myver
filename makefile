@@ -30,3 +30,4 @@ test:
 coverage: clean-coverage
 	coverage run --source=myver/ -m pytest -v -rfEs tests/
 	coverage html -d htmlcov/
+	coverage report
