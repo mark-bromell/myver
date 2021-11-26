@@ -16,6 +16,17 @@ section to further understand how myver works, and also how to know how
 the configuration affects the version
 
 ```yaml
+# optional
+# Files to update the version in.
+files:
+  - path: '/path/to/file.md'
+  - path: '/can/also/glob/*.txt'
+    ignores:  # Update all version occurrences except these.
+      - '.*=={{ version }}'
+  - path: 'setup.py'
+    patterns:  # Only update based on these patterns, ignore the rest.
+      - "version='{{ version }}'"
+
 # required
 # Put each of your part elements inside here.
 parts:
