@@ -7,13 +7,106 @@
 
 ---
 
-# Configuration
+# Configuration YAML syntax
 
-Here is the fields that are available in the configuration's yaml. The
-comments in this snippet may not cover the full scope of each field and
-what it entails, so we recommend reading the [Examples](#examples)
-section to further understand how myver works, and also how to know how
-the configuration affects the version
+This section will describe the configurations YAML syntax. This is for a
+detailed explanation of each attribute in the configuration. While
+examples may be present in this section, it is also be beneficial to
+refer to the [Examples](#examples) section to see full practical
+implementations of the configuration YAML.
+
+## `files`
+
+*Optional*. A list of files to update when the version is changed. It
+will only change references to the current version value by default.
+
+An unwanted file change is possible if you are referencing the
+version of another project in a file that happens to have the same
+version string as your project, then both instances of that version
+string will be updated. So lets say your project's version is `3.6.8`
+and you are updating a file that is referencing `Python 3.6.8`, then by
+default the python version reference will be updated. Although these
+unwanted file updates can be avoided with further configuration.
+
+### Example
+
+```yaml
+files:
+  - path: '/project/__version__.py'
+  - path: 'setup.py'
+    patterns:
+      - "version='{{ version }}'"
+```
+
+## `files[*].path`
+
+*At least 1 required*. The path to a file that you want to update with
+each version change. This path can use
+[globbing](https://en.wikipedia.org/wiki/Glob_(programming)) so that you
+can define a range of files to update.
+
+### Example
+
+```yaml
+files:
+  - path: '/path/to/file.md'
+  - path: '/can/also/glob/*.txt'
+```
+
+## `files[*].patterns`
+
+
+
+## `files[*].ignores`
+
+```yaml
+files:
+  - path: 'requirements.txt'
+    patterns:
+      - '**'
+    ignores:
+      - '.*=={{ version }}'
+```
+
+## `parts`
+
+
+## `parts.<part>`
+
+
+## `parts.<part>.value`
+
+
+## `parts.<part>.requires`
+
+
+## `parts.<part>.prefix`
+
+
+## `parts.<part>.identifier`
+
+
+## `parts.<part>.identifier.strings`
+
+
+## `parts.<part>.identifier.start`
+
+
+## `parts.<part>.number`
+
+
+## `parts.<part>.number.label`
+
+
+## `parts.<part>.number.label-suffix`
+
+
+## `parts.<part>.number.start`
+
+
+## `parts.<part>.number.show-start`
+
+
 
 ```yaml
 # optional
@@ -163,7 +256,7 @@ parts:
 ### Preamble
 
 In each of these scenarios we will show a snippet which is demonstrating
-how you may interact with myver in a terminal environment. There may
+how you may interact with MyVer in a terminal environment. There may
 then be a description of what is happening in the snippet demonstration
 below each snippet.
 
