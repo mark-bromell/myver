@@ -136,7 +136,7 @@ files:
 List of regex patterns where an update will be ignored if a pattern is
 matched in the file. The `files[*].ignores` patterns takes priority
 over the `files[*].patterns`, so if there's a match in
-`files[*].patterns` and also in `files[*].ignore` then that pattern
+`files[*].patterns` and also in `files[*].ignores` then that pattern
 match will not perform an update.
 
 The pattern regex strings for ignoring must contain `{{ version }}` for
