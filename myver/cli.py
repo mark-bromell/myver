@@ -1,4 +1,6 @@
 import argparse
+import sys
+import textwrap
 
 from myver.config import version_from_file, version_to_file
 
@@ -7,6 +9,17 @@ def main(input_args=None):
     """Entry point for the command line utility."""
     args = _parse_args(input_args)
 
+    if args.help:
+        print(textwrap.dedent('''\
+        usage: myver [-h] [-c] [-b ARG [...]] [-r PART [...]] [--config PATH]
+
+          -h, --help               Show this help message and exit
+          -c, --current            Get the current version
+          -b, --bump ARG [...]     Bump version parts
+          -r, --reset PART [...]   Reset version parts
+          --config PATH            Config file path
+        '''))
+        sys.exit(0)
     if args.current:
         version = version_from_file(args.config)
         print(version)
@@ -27,17 +40,22 @@ def main(input_args=None):
 
 
 def _parse_args(args):
-    parser = argparse.ArgumentParser(prog='myver')
+    parser = argparse.ArgumentParser(
+        prog='myver',
+        add_help=False,
+    )
+    parser.add_argument(
+        '-h', '--help',
+        required=False,
+        action='store_true',
+    )
     parser.add_argument(
         '-c', '--current',
-        help='get the current version',
         required=False,
         action='store_true',
     )
     parser.add_argument(
         '-b', '--bump',
-        help='bump version parts',
-        metavar='ARG',
         required=False,
         action='extend',
         nargs='+',
@@ -45,8 +63,6 @@ def _parse_args(args):
     )
     parser.add_argument(
         '-r', '--reset',
-        help='reset version parts',
-        metavar='PART',
         required=False,
         action='extend',
         nargs='+',
@@ -54,7 +70,6 @@ def _parse_args(args):
     )
     parser.add_argument(
         '--config',
-        help='config file path',
         required=False,
         default='myver.yml',
         type=str,
