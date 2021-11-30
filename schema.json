@@ -145,13 +145,6 @@
             "items": {
               "type": "string"
             }
-          },
-          "ignores": {
-            "description": "List of patterns to look for to ignore an update if matched.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         },
         "required": [

@@ -21,7 +21,6 @@ simple or as complex as you need it to be.
     - [`files`](#files)
     - [`files[*].path`](#filespath)
     - [`files[*].patterns`](#filespatterns)
-    - [`files[*].ignores`](#filesignores)
     - [`parts`](#parts)
     - [`parts.<part>`](#partspart)
     - [`parts.<part>.value`](#partspartvalue)
@@ -129,27 +128,6 @@ files:
   - path: 'setup.py'
     patterns:
       - "version='{{ version }}'"
-```
-
-### `files[*].ignores`
-
-List of regex patterns where an update will be ignored if a pattern is
-matched in the file. The `files[*].ignores` patterns takes priority
-over the `files[*].patterns`, so if there's a match in
-`files[*].patterns` and also in `files[*].ignores` then that pattern
-match will not perform an update.
-
-The pattern regex strings for ignoring must contain `{{ version }}` for
-the same reason that it is needed
-in [`files[*].patterns`](#filespatterns)
-
-```yaml
-files:
-  - path: 'requirements.txt'
-    patterns:
-      - '**'
-    ignores:
-      - '.*=={{ version }}'
 ```
 
 ### `parts`

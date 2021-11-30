@@ -9,6 +9,13 @@ def sample_config(tmp_path) -> Path:
     path = tmp_path / 'sample.yml'
     config = textwrap.dedent("""\
         # line comment
+        files:
+            - path: 'setup.py'
+            - path: 'my/path/*.md'
+              patterns:
+                - 'MyVer {{ version }}'
+                - 'Something.*{{ version }}'
+            
         parts:
             core:
                 value: 1

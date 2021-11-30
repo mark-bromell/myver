@@ -4,9 +4,11 @@ import pytest
 
 from myver.config import (
     part_from_dict, version_from_dict, dict_from_file,
-    version_to_file, version_from_file,
+    version_to_file, version_from_file, file_updaters_from_dict,
+    file_updaters_from_file,
 )
 from myver.error import ConfigError
+from myver.files import FileUpdater
 from myver.part import NumberPart, IdentifierPart, Part
 from myver.version import Version
 
@@ -145,6 +147,9 @@ def test_version_from_dict_missing_requires_attribute():
 
 def test_dict_from_file(sample_config):
     config_dict = dict_from_file(str(sample_config.absolute()))
+    assert config_dict['files'][0]['path']
+    assert config_dict['files'][1]['path']
+    assert config_dict['files'][1]['patterns']
     assert config_dict['parts']['core']
     assert config_dict['parts']['pre']['identifier']
     assert config_dict['parts']['prenum']['number']
@@ -175,6 +180,13 @@ def test_version_to_file_preserve_formatting(sample_config):
     with open(sample_config, 'r') as file:
         assert file.read() == textwrap.dedent("""\
             # line comment
+            files:
+                - path: 'setup.py'
+                - path: 'my/path/*.md'
+                  patterns:
+                    - 'MyVer {{ version }}'
+                    - 'Something.*{{ version }}'
+            
             parts:
                 core:
                     value: 1
@@ -198,3 +210,42 @@ def test_version_to_file_bad_config(sample_config):
     ])
     with pytest.raises(ConfigError):
         version_to_file(str(sample_config.absolute()), version)
+
+
+def test_file_updaters_from_dict():
+    files_dict = {
+        'files': [
+            {
+                'path': 'some/path.md',
+                'patterns': ['pattern {{ version }}', 'another {{ version }}']
+            },
+            {
+                'path': 'another/path.md',
+            }
+        ]
+    }
+    file_updaters = file_updaters_from_dict(files_dict)
+    assert file_updaters[0].path == 'some/path.md'
+    assert file_updaters[0].patterns == ['pattern {{ version }}',
+                                         'another {{ version }}']
+    assert file_updaters[1].path == 'another/path.md'
+
+
+def test_file_updaters_from_dict_missing_requires_attribute():
+    with pytest.raises(ConfigError):
+        file_updaters_from_dict({'files': [
+            {
+                'patterns': ['pattern {{ version }}', 'another {{ version }}']
+            }
+        ]})
+
+
+def test_file_updaters_from_file(sample_config):
+    updaters = [
+        FileUpdater(path='setup.py'),
+        FileUpdater(path='my/path/*.md', patterns=[
+            'MyVer {{ version }}',
+            'Something.*{{ version }}',
+        ])
+    ]
+    assert updaters == file_updaters_from_file(str(sample_config.absolute()))

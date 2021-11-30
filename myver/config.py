@@ -3,6 +3,7 @@ from __future__ import annotations
 import ruamel.yaml
 
 from myver.error import ConfigError
+from myver.files import FileUpdater
 from myver.part import Part, IdentifierPart, NumberPart
 from myver.version import Version
 
@@ -139,7 +140,8 @@ def version_from_dict(config_dict: dict) -> Version:
     except KeyError as key_error:
         key = key_error.args[0]
         raise ConfigError(
-            f'You must have the required attribute `{key}` configured')
+            f'You must have the required attribute `{key}` configured in '
+            f'`parts`')
 
 
 def part_from_dict(key: str, config_dict: dict) -> Part:
@@ -181,3 +183,24 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
             value=config_dict['value'],
             requires=config_dict.get('requires'),
             prefix=config_dict.get('prefix'))
+
+
+def file_updaters_from_dict(config_dict: dict) -> list[FileUpdater]:
+    try:
+        file_updaters: list[FileUpdater] = []
+        for file_config in config_dict.get('files'):
+            file_updaters.append(FileUpdater(
+                path=file_config['path'],
+                patterns=file_config.get('patterns')
+            ))
+        return file_updaters
+    except KeyError as key_error:
+        key = key_error.args[0]
+        raise ConfigError(
+            f'You must have the required attribute `{key}` configured in '
+            f'`files`')
+
+
+def file_updaters_from_file(path: str) -> list[FileUpdater]:
+    config_dict = dict_from_file(path)
+    return file_updaters_from_dict(config_dict)
