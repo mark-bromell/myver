@@ -3,9 +3,7 @@ import textwrap
 import pytest
 
 from myver.config import (
-    part_from_dict, version_from_dict, dict_from_file,
-    version_to_file, version_from_file, file_updaters_from_dict,
-    file_updaters_from_file,
+    part_from_dict, version_from_dict, dict_from_yaml, files_from_dict, Config,
 )
 from myver.error import ConfigError
 from myver.files import FileUpdater
@@ -145,8 +143,8 @@ def test_version_from_dict_missing_requires_attribute():
         })
 
 
-def test_dict_from_file(sample_config):
-    config_dict = dict_from_file(str(sample_config.absolute()))
+def test_dict_from_yaml(sample_config):
+    config_dict = dict_from_yaml(str(sample_config.absolute()))
     assert config_dict['files'][0]['path']
     assert config_dict['files'][1]['path']
     assert config_dict['files'][1]['patterns']
@@ -155,28 +153,90 @@ def test_dict_from_file(sample_config):
     assert config_dict['parts']['prenum']['number']
 
 
-def test_version_from_file(sample_config):
+def test_config_load(sample_config):
+    config = Config()
+    config.path = str(sample_config.absolute())
+    files = [
+        FileUpdater(path='setup.py'),
+        FileUpdater(path='my/path/*.md', patterns=[
+            'MyVer {{ version }}',
+            'Something.*{{ version }}',
+        ])
+    ]
     version = Version([
         NumberPart(key='core', value=1),
         IdentifierPart(key='pre', value=None, strings=['alpha', 'beta']),
         NumberPart(key='prenum', value=None, start=1),
     ])
-    assert version == version_from_file(str(sample_config.absolute()))
+    config.load()
+    assert config.files == files
+    assert config.version == version
 
 
-def test_version_to_file(sample_config):
+def test_config_load_in_init(sample_config):
+    config = Config(path=str(sample_config.absolute()))
+    files = [
+        FileUpdater(path='setup.py'),
+        FileUpdater(path='my/path/*.md', patterns=[
+            'MyVer {{ version }}',
+            'Something.*{{ version }}',
+        ])
+    ]
+    version = Version([
+        NumberPart(key='core', value=1),
+        IdentifierPart(key='pre', value=None, strings=['alpha', 'beta']),
+        NumberPart(key='prenum', value=None, start=1),
+    ])
+    assert config.files == files
+    assert config.version == version
+
+
+def test_config_init_load_override(sample_config):
+    files = [
+        FileUpdater(path='setup.py'),
+    ]
+    version = Version([
+        NumberPart(key='core', value=1),
+    ])
+    config = Config(
+        path=str(sample_config.absolute()),
+        files=files,
+        version=version,
+    )
+    assert config.files == files
+    assert config.version == version
+    config = Config(
+        path=str(sample_config.absolute()),
+        version=version,
+    )
+    assert config.files is None
+    assert config.version == version
+    config = Config(
+        path=str(sample_config.absolute()),
+        files=files,
+    )
+    assert config.files == files
+    assert config.version is None
+
+
+def test_config_save(sample_config):
     version = Version([
         NumberPart(key='core', value=2),
         IdentifierPart(key='pre', value='alpha', strings=['alpha', 'beta']),
         NumberPart(key='prenum', value=1, start=1),
     ])
-    version_to_file(str(sample_config.absolute()), version)
-    assert version == version_from_file(str(sample_config.absolute()))
+    config = Config(
+        path=str(sample_config.absolute()),
+        version=version,
+    )
+    config.save()
+    loaded = Config(path=str(sample_config.absolute()))
+    assert version == loaded.version
 
 
-def test_version_to_file_preserve_formatting(sample_config):
-    version = version_from_file(str(sample_config.absolute()))
-    version_to_file(str(sample_config.absolute()), version)
+def test_config_save_preserve_formatting(sample_config):
+    config = Config(str(sample_config.absolute()))
+    config.save()
     with open(sample_config, 'r') as file:
         assert file.read() == textwrap.dedent("""\
             # line comment
@@ -209,10 +269,14 @@ def test_version_to_file_bad_config(sample_config):
         IdentifierPart(key='pre', value='alpha', strings=['alpha', 'beta']),
     ])
     with pytest.raises(ConfigError):
-        version_to_file(str(sample_config.absolute()), version)
+        config = Config(
+            path=str(sample_config.absolute()),
+            version=version,
+        )
+        config.save()
 
 
-def test_file_updaters_from_dict():
+def test_files_from_dict():
     files_dict = {
         'files': [
             {
@@ -224,28 +288,17 @@ def test_file_updaters_from_dict():
             }
         ]
     }
-    file_updaters = file_updaters_from_dict(files_dict)
-    assert file_updaters[0].path == 'some/path.md'
-    assert file_updaters[0].patterns == ['pattern {{ version }}',
-                                         'another {{ version }}']
-    assert file_updaters[1].path == 'another/path.md'
+    files = files_from_dict(files_dict)
+    assert files[0].path == 'some/path.md'
+    assert files[0].patterns == ['pattern {{ version }}',
+                                 'another {{ version }}']
+    assert files[1].path == 'another/path.md'
 
 
-def test_file_updaters_from_dict_missing_requires_attribute():
+def test_files_from_dict_missing_requires_attribute():
     with pytest.raises(ConfigError):
-        file_updaters_from_dict({'files': [
+        files_from_dict({'files': [
             {
                 'patterns': ['pattern {{ version }}', 'another {{ version }}']
             }
         ]})
-
-
-def test_file_updaters_from_file(sample_config):
-    updaters = [
-        FileUpdater(path='setup.py'),
-        FileUpdater(path='my/path/*.md', patterns=[
-            'MyVer {{ version }}',
-            'Something.*{{ version }}',
-        ])
-    ]
-    assert updaters == file_updaters_from_file(str(sample_config.absolute()))

@@ -2,7 +2,7 @@ import argparse
 import sys
 import textwrap
 
-from myver.config import version_from_file, version_to_file
+from myver.config import Config
 
 
 def main(input_args=None):
@@ -20,22 +20,22 @@ def main(input_args=None):
           --config PATH            Config file path
         '''))
         sys.exit(0)
+
+    config = Config(args.config)
+
     if args.current:
-        version = version_from_file(args.config)
-        print(version)
+        print(config.version)
     if args.bump:
-        version = version_from_file(args.config)
-        old_version_str = str(version)
-        version.bump(args.bump)
-        new_version_str = str(version)
-        version_to_file(args.config, version)
+        old_version_str = str(config.version)
+        config.version.bump(args.bump)
+        new_version_str = str(config.version)
+        config.save()
         print(f'{old_version_str}  >>  {new_version_str}')
     if args.reset:
-        version = version_from_file(args.config)
-        old_version_str = str(version)
-        version.reset(args.reset)
-        new_version_str = str(version)
-        version_to_file(args.config, version)
+        old_version_str = str(config.version)
+        config.version.reset(args.reset)
+        new_version_str = str(config.version)
+        config.save()
         print(f'{old_version_str}  >>  {new_version_str}')
 
 
