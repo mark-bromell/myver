@@ -129,6 +129,30 @@
     }
   },
   "properties": {
+    "files": {
+      "description": "List of paths to update with version changes.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "description": "The path or glob defining the file(s) to update.",
+            "type": "string"
+          },
+          "patterns": {
+            "description": "List of patterns to look for when updating a file.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "minItems": 1
+      }
+    },
     "parts": {
       "description": "The collections of all part configurations.",
       "type": "object",

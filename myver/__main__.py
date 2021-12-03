@@ -1,15 +1,17 @@
-from __future__ import annotations
-
+import logging
 import sys
-
-from myver.cli import main
 from logging import getLogger
 
+from myver.cli import main
 from myver.error import MyverError
 
-log = getLogger(__name__)
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format='[%(levelname)s] %(message)s',
+        level=logging.WARNING
+    )
+    log = getLogger(__name__)
     try:
         main()
     except KeyboardInterrupt:

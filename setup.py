@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='myver',
-    version='0.0.3',
+    version='1.0.0',
     author='Mark Bromell',
     author_email='markbromell.business@gmail.com',
     description='Development tool for configuring and altering software '
@@ -15,7 +15,7 @@ setuptools.setup(
     url='https://github.com/mark-bromell/myver',
     project_urls={
         'Issue Tracker': 'https://github.com/mark-bromell/myver/issues',
-        'Source Code': 'https://github.com/mark-bromell/simbak',
+        'Source Code': 'https://github.com/mark-bromell/myver',
     },
     classifiers=[
         'Programming Language :: Python :: 3',
@@ -28,8 +28,9 @@ setuptools.setup(
         ],
     },
     packages=setuptools.find_packages(),
-    python_requires='>=3.8',
+    python_requires='>=3.7',
     install_requires=[
         'ruamel.yaml==0.17.17',
+        'jinja2==3.0.3',
     ],
 )

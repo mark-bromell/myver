@@ -7,6 +7,11 @@
 # the value of the given entry, and we imply the entry value due to the
 # value of other entries.
 
+files:
+  - path: 'version.txt'
+    # patterns: [ '{{ version }}' ]
+    # ignores: null
+
 parts:
   major:
     value: 3

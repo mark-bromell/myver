@@ -7,91 +7,329 @@
 
 ---
 
+MyVer is a tool to help you manage and alter your project's version
+number. You can define your own configuration for your version, MyVer
+gives you complete freedom to enforce your own version spec, make it as
+simple or as complex as you need it to be.
+
+# Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+  - [YAML Syntax](#yaml-syntax)
+    - [`files`](#files)
+    - [`files[*].path`](#filespath)
+    - [`files[*].patterns`](#filespatterns)
+    - [`parts`](#parts)
+    - [`parts.<part>`](#partspart)
+    - [`parts.<part>.value`](#partspartvalue)
+    - [`parts.<part>.requires`](#partspartrequires)
+    - [`parts.<part>.prefix`](#partspartprefix)
+    - [`parts.<part>.identifier`](#partspartidentifier)
+    - [`parts.<part>.identifier.strings`](#partspartidentifierstrings)
+    - [`parts.<part>.identifier.start`](#partspartidentifierstart)
+    - [`parts.<part>.number`](#partspartnumber)
+    - [`parts.<part>.number.label`](#partspartnumberlabel)
+    - [`parts.<part>.number.label-suffix`](#partspartnumberlabel-suffix)
+    - [`parts.<part>.number.start`](#partspartnumberstart)
+    - [`parts.<part>.number.show-start`](#partspartnumbershow-start)
+- [Examples](#examples)
+  - [SemVer](#semver)
+    - [Standard bumping scenarios](#standard-bumping-scenarios)
+    - [Bumping with non-required child](#bumping-with-non-required-child)
+    - [Part with a required child](#part-with-a-required-child)
+    - [Value overriding](#value-overriding)
+    - [Resetting optional part](#resetting-optional-part)
+    - [Implicit children](#implicit-children)
+
+# Installation
+
+To install MyVer you can use [pip](https://pypi.org/project/pip/), which
+will download and install the 
+[MyVer package from PyPi](https://pypi.org/project/myver/)
+
+```bash
+pip install myver
+```
+
+# Usage
+
+```
+usage: myver [-h] [-c] [-b ARG [...]] [-r PART [...]] [--config PATH]
+
+  -h, --help               Show this help message and exit
+  -b, --bump ARG [...]     Bump version parts
+  --config PATH            Config file path
+  -c, --current            Get the current version
+  -r, --reset PART [...]   Reset version parts
+  -v, --verbose            Log more details
+```
+
 # Configuration
 
-Here is the fields that are available in the configuration's yaml. The
-comments in this snippet may not cover the full scope of each field and
-what it entails, so we recommend reading the [Examples](#examples)
-section to further understand how myver works, and also how to know how
-the configuration affects the version
+This section will describe the configurations YAML syntax. This is for a
+detailed explanation of each attribute in the configuration. While
+examples may be present in this section, it is also beneficial to refer
+to the [Examples](#examples) section to see full practical
+implementations of the configuration YAML.
+
+## YAML Syntax
+
+### `files`
+
+*Optional*. A list of files to update when the version is changed. It
+will only change references to the current version value by default.
+
+An unwanted file change is possible if you are referencing the version
+of another project in a file that happens to have the same version
+string as your project, then both instances of that version string will
+be updated. So lets say your project's version is `3.6.8`
+and you are updating a file that is referencing `Python 3.6.8`, then by
+default the python version reference will be updated. Although these
+unwanted file updates can be avoided with further configuration.
 
 ```yaml
-# required
-# Put each of your part elements inside here.
+files:
+  - path: 'setup.py'
+    patterns:
+      - "version='{{ version }}'"
+  - path: '/project/__version__.py'
+```
+
+### `files[*].path`
+
+The path to a file that you want to update with each version change.
+This path can use
+[globbing](https://en.wikipedia.org/wiki/Glob_(programming)) so that you
+can define a range of files to update.
+
+```yaml
+files:
+  - path: '/path/to/file.md'
+  - path: '/can/also/glob/*.txt'
+```
+
+### `files[*].patterns`
+
+List of regex patterns to use for updating a file. Any instance of a
+version string will not be updated if it does not match a pattern. The
+pattern regex strings must contain `{{ version }}` to parse the current
+version into the pattern, this will be parsed first before the regex is
+utilised in searching for file updates. We need to include
+`{{ version }}` because this signifies the part of the string to change
+in a pattern match.
+
+If `files[*].patterns` is not configured, it is assumed that the default
+pattern match is just `{{ version }}`, meaning that any string in the
+file that is equal to the current version will be updated.
+
+```yaml
+files:
+  - path: 'setup.py'
+    patterns:
+      - "version='{{ version }}'"
+```
+
+### `parts`
+
+*Required*. Collection of parts configured for your project's version.
+You must define at least 1 [`parts.<part>`](#partspart) in this
+collection.
+
+### `parts.<part>`
+
+The configuration of an individual part in a version. You define the key
+of the part through the name of the YAML attribute, in the example
+below the key of our only part is `major`, you can name these keys
+whatever you like, although you cannot have 2 parts with the same key
+name.
+
+There are 2 types of parts -- identifier parts and number parts. An
+identifier part is a string part that can have a value based on a range
+of strings, see [`parts.<part>.identifier`](#partspartidentifier).
+Whereas a number part is simply a positive integer that can be
+incremented. The number part is the default type if a type is not
+explicitly configured.
+
+```yaml
 parts:
-  # required (at least 1)
-  # This is one of our parts with its key named `main`.
-  main:
-    # string | int | null -- required
-    # If you do not define a part value, it will use the start value if
-    # it is invoked in a bump. If a part value is null, then it will not
-    # be shown in the version.
+  major:
+    value: 3
+ ```
+
+### `parts.<part>.value`
+
+Each part configuration needs to define a value attribute in its spec.
+If your part has no value then use `value: null`. Depending on the part
+type, the value of the part can be a string or a number. All parts can
+also be `null`.
+
+```yaml
+parts:
+  major:
+    value: 3
+  minor:
     value: null
-
-    # string | null -- optional
-    # Defines any other part that this part requires. This means that
-    # `main` cannot exist without having its required part as a direct 
-    # child of this part. Value must be a valid part name.
-    requires: null
-
-    # string | null -- optional
-    # Parts may have a character prefix in order to visually separate
-    # them from previous parts, or to denote more meaning to the part.
-    prefix: null
-
-    # You can either have `identifier` or `number`, you cannot have
-    # both. If neither is configured, then the part will be configured
-    # as a number part, with a default start value of `0`.
-
-    # optional
-    # This configures a part to be an identifier string. You would use
-    # this when you have multiple possible strings for a part that have
-    # a chronological order between each string. A common example are
-    # the pre-release identifiers of `alpha`, `beta`, and `rc`.
+  pre:
+    value: 'beta'
     identifier:
-      # list -- required
-      # These are the strings which should be listed in their
-      # chronological order.
-      strings: [ 'string1', 'string2' ]
+      strings: [ 'beta' ]
+ ```
 
-      # string -- optional
-      # You can define a custom start value, by default the start value
-      # will be the first value in the `strings` list. If you do define
-      # a custom start value, it needs to be a value that is also in the
-      # string list.
-      start: 'string1'
+### `parts.<part>.requires`
 
-    # optional
-    # This configures a part to be a number. This means that it is
-    # easily incremented, and it cannot contain alphabetic characters.
+Defines a part that is required to exist by another part. It means that
+if a part has a non-null value, and it requires another part, the part
+that it requires cannot be null. In the example below we see that
+`major` requires `minor`, this means that `minor` can only ever be null
+if `major` is null. So if `major` has a non-null value, then `minor`
+must also have a non-null value.
+
+```yaml
+parts:
+  major:
+    value: 3
+    requires: 'minor'
+  minor:
+    value: 9
+ ```
+
+### `parts.<part>.prefix`
+
+A string to display before the part. In the example below we have part
+`major` and `minor`, if we parse this version we will get `3.9`, where
+the `.9` is the `minor` part where the `.` is the prefix of the part's
+value.
+
+```yaml
+parts:
+  major:
+    value: 3
+  minor:
+    value: 9
+    prefix: '.'
+ ```
+
+### `parts.<part>.identifier`
+
+When this is configured on a part, it signifies that the part value is
+a string. *You cannot configure `parts.<part>.identifier` and
+[`parts.<part>.number`](#partspartnumber) at the same time, they are
+mutually exclusive.*
+
+You would use this when you have multiple possible strings for a part
+that have a chronological order between each string. A common example
+are the pre-release identifiers of `alpha`, `beta`, and `rc`.
+
+### `parts.<part>.identifier.strings`
+
+A list of strings to be used in the part's value, if you have configured
+[`parts.<part>.identifier`](#partspartidentifier) for a part, then this
+list of strings needs to be configured. The order of the strings matter
+as the bumping of an identifier part will move through the list in the
+order it is defined.
+
+```yaml
+parts:
+  pre:
+    identifier:
+      strings:
+        - 'alpha'
+        - 'beta'
+        - 'rc'
+```
+
+### `parts.<part>.identifier.start`
+
+The starting value for the part. The start value is the value that the
+part will use when it is bumped from a `null` value, or when it is
+reset. By default, if this is not configured explicitly, the start value
+is assumed to be the first value in the
+[`parts.<part>.identifier.strings`](#partspartidentifierstrings) list.
+
+```yaml
+parts:
+  pre:
+    value: 'beta'
+    identifier:
+      strings:
+        - 'alpha'
+        - 'beta'
+        - 'rc'
+      start: 'beta'
+```
+
+### `parts.<part>.number`
+
+This will configure a part to be a positive integer. *You cannot
+configure [`parts.<part>.identifier`](#partspartidentifier) and
+`parts.<part>.number` at the same time, they are mutually exclusive.*
+
+### `parts.<part>.number.label`
+
+Sometimes you will want a label for a number part. In the example below
+we have a `build` part, instead of just using a number to represent this
+part, you may instead want to parse it to something like `build4`, and
+this is what the example below achieves.
+
+```yaml
+parts:
+  build:
+    value: 4
     number:
-      # string | null -- optional
-      # Sometimes you will want a label for a number part. An example
-      # of this would be a `build` part, instead of just using a number
-      # to represent this part, you may instead see something like
-      # `build.4` as a part.
-      label: null
+      label: 'build'
+```
 
-      # string | null -- optional
-      # A label may have a suffix (characters after the label) in order
-      # to separate the label with the number. An example of this would
-      # be the `.` suffix on a `build` label, which would give something
-      # like `build.4` as a part.
-      label-suffix: null
+### `parts.<part>.number.label-suffix`
 
-      # int -- optional
-      # When the part is reset or invoked, this is the value that the
-      # part will start at. By default, number parts start at 0.
-      start: 0
+A label may have a suffix (characters after the label) in order to
+separate the label with the number. In the example below we see the `.`
+suffix on a `build` label, which would give something like `build.4`
+when it is parsed.
 
-      # boolean -- optional
-      # Sometimes you may not want to show the first value of a number
-      # part. An example of this would be a `dev` part, commonly you
-      # may see a version like `3.4.5+dev` which would define the first
-      # dev instance of a version, then the second dev instance would
-      # look like this `3.4.5+dev.2`.
-      show-start: true
+```yaml
+parts:
+  build:
+    value: 4
+    number:
+      label: 'build'
+      label-suffix: '.'
+```
 
+### `parts.<part>.number.start`
+
+This defines the starting value for a number part, this the value that
+the part will use when it is bumped out of a `null` value, or if it is
+reset. By default, it is assumed that the start value of a number part
+is `0` if it is not configured explicitly.
+
+```yaml
+parts:
+  build:
+    value: 4
+    number:
+      start: 1
+```
+
+### `parts.<part>.number.show-start`
+
+Sometimes you may not want to show the first value of a number part. In
+the example below we have a `dev` part, commonly you may see a version
+like `3.4.5+dev` which would define the first dev instance of a version,
+then the second dev instance would look like this `3.4.5+dev.2`. By
+default, this value will be assumed to be `true` if it is not
+configured explicitly.
+
+```yaml
+parts:
+  dev:
+    value: 1
+    number:
+      label: 'dev'
+      label-suffix: '.'
+      start: 1
+      show-start: false
 ```
 
 # Examples
@@ -146,13 +384,12 @@ parts:
       label-suffix: '.'
       start: 1
       show-start: false
-
 ```
 
 ### Preamble
 
 In each of these scenarios we will show a snippet which is demonstrating
-how you may interact with myver in a terminal environment. There may
+how you may interact with MyVer in a terminal environment. There may
 then be a description of what is happening in the snippet demonstration
 below each snippet.
 

@@ -1,2 +1,2 @@
-build==0.7.0
 ruamel.yaml==0.17.17
+jinja2==3.0.3

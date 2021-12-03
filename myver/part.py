@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import abc
-from typing import Optional, Union
+from logging import getLogger
+from typing import Optional, Union, List
 
 from myver.error import ConfigError, BumpError
+
+log = getLogger(__name__)
 
 
 class Part(abc.ABC):
@@ -73,18 +76,19 @@ class Part(abc.ABC):
         """Checks if the part's value is not None."""
         return self.value is not None
 
-    def bump(self, bump_args: list[str] = None, value_override: str = None):
+    def bump(self, bump_args: List[str] = None, value_override: str = None):
         """Bump this part's value.
 
         :param bump_args: The bump arguments.
         :param value_override: Manual override for the bumped value.
         """
+        log.info(f'Bumping <{self.key}>')
         bump_args = bump_args or []
         self.next_value(value_override)
         if self.child:
             self.child.reset(bump_args)
 
-    def reset(self, bump_args: list[str] = None):
+    def reset(self, bump_args: List[str] = None):
         """Reset part value to the start value.
 
         Resetting the part to the start value will also make a recursive
@@ -92,6 +96,7 @@ class Part(abc.ABC):
 
         :param bump_args: The keys that are being bumped.
         """
+        log.info(f'Resetting <{self.key}>')
         bump_args = bump_args or []
 
         # If this part is required and it's in the bump keys, we want to
@@ -125,9 +130,12 @@ class Part(abc.ABC):
         """
         if self.parent is not None:
             if self.parent.requires == key and self.parent.is_set():
+                log.debug(f'Part <{key}> is required')
                 return True
             else:
                 return self.parent._parent_requires(key)
+
+        log.debug(f'Part <{key}> is not required')
         return False
 
     def __str__(self):
@@ -145,20 +153,20 @@ class IdentifierPart(Part):
     :param start: The starting value of the part. This is used when the
         part goes out of a null state, or is reset to its original
         state. If this is specified it must be a string that is in the
-        `self.strings` list.
+        `self.strings` List.
     """
 
     def __init__(self,
                  key: str,
                  value: Optional[str],
-                 strings: list[str],
+                 strings: List[str],
                  requires: Optional[str] = None,
                  prefix: Optional[str] = None,
                  child: Optional[Part] = None,
                  parent: Optional[Part] = None,
                  start: str = None):
         super().__init__(key, value, requires, prefix, child, parent)
-        self._strings: list[str] = strings
+        self._strings: List[str] = strings
         self._start: Optional[str] = start
         self.strings = strings
         self.start = start
@@ -168,9 +176,9 @@ class IdentifierPart(Part):
         return self._strings
 
     @strings.setter
-    def strings(self, new_strings: list[str]):
+    def strings(self, new_strings: List[str]):
         self._validate_strings(new_strings)
-        self._strings: list[str] = new_strings
+        self._strings: List[str] = new_strings
 
     @property
     def start(self) -> str:
@@ -186,7 +194,7 @@ class IdentifierPart(Part):
             if value_override not in self.strings:
                 raise BumpError(
                     f'Cannot set value override `{value_override}`, it must '
-                    f'be in the strings list of part `{self.key}`')
+                    f'be in the strings List of part `{self.key}`')
             else:
                 self.value = value_override
         elif self.is_set():
@@ -204,13 +212,13 @@ class IdentifierPart(Part):
         if start is not None and start not in self.strings:
             raise ConfigError(
                 f'Part `{self.key}` has an `identifier.start` value that is '
-                f'not in the `identifier.strings` list')
+                f'not in the `identifier.strings` List')
 
-    def _validate_strings(self, strings: list[str]):
+    def _validate_strings(self, strings: List[str]):
         if not len(strings) > 0:
             raise ConfigError(
                 f'Part `{self.key}` has an `identifier.strings` has an empty '
-                f'list, the list must have at least one string')
+                f'List, the List must have at least one string')
 
 
 class NumberPart(Part):
