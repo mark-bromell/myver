@@ -59,10 +59,11 @@ pip install myver
 usage: myver [-h] [-c] [-b ARG [...]] [-r PART [...]] [--config PATH]
 
   -h, --help               Show this help message and exit
-  -c, --current            Get the current version
   -b, --bump ARG [...]     Bump version parts
-  -r, --reset PART [...]   Reset version parts
   --config PATH            Config file path
+  -c, --current            Get the current version
+  -r, --reset PART [...]   Reset version parts
+  -v, --verbose            Log more details
 ```
 
 # Configuration

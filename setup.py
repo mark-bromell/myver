@@ -31,5 +31,6 @@ setuptools.setup(
     python_requires='>=3.8',
     install_requires=[
         'ruamel.yaml==0.17.17',
+        'jinja2==3.0.3',
     ],
 )

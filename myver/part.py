@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import abc
+from logging import getLogger
 from typing import Optional, Union
 
 from myver.error import ConfigError, BumpError
+
+log = getLogger(__name__)
 
 
 class Part(abc.ABC):
@@ -79,6 +82,7 @@ class Part(abc.ABC):
         :param bump_args: The bump arguments.
         :param value_override: Manual override for the bumped value.
         """
+        log.info(f'Bumping <{self.key}>')
         bump_args = bump_args or []
         self.next_value(value_override)
         if self.child:
@@ -92,6 +96,7 @@ class Part(abc.ABC):
 
         :param bump_args: The keys that are being bumped.
         """
+        log.info(f'Resetting <{self.key}>')
         bump_args = bump_args or []
 
         # If this part is required and it's in the bump keys, we want to
@@ -125,9 +130,12 @@ class Part(abc.ABC):
         """
         if self.parent is not None:
             if self.parent.requires == key and self.parent.is_set():
+                log.debug(f'Part <{key}> is required')
                 return True
             else:
                 return self.parent._parent_requires(key)
+
+        log.debug(f'Part <{key}> is not required')
         return False
 
     def __str__(self):

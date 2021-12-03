@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 import ruamel.yaml
 
 from myver.error import ConfigError
 from myver.files import FileUpdater
 from myver.part import Part, IdentifierPart, NumberPart
 from myver.version import Version
+
+log = getLogger(__name__)
 
 
 class Config:
@@ -20,7 +24,11 @@ class Config:
             self.load()
 
     def load(self):
-        """Load the config from `self.path`."""
+        """Load the config from `self.path`.
+
+        :raise ConfigError: If the configuration file is invalid.
+        """
+        log.info(f'Loading config file {self.path}')
         self._load_files()
         self._load_version()
 
@@ -29,11 +37,6 @@ class Config:
         self.files = files_from_dict(config_dict)
 
     def _load_version(self):
-        """Construct version from a config dict.
-
-        :raise ConfigError: If the configuration is invalid.
-        :return: The version.
-        """
         config_dict = dict_from_yaml(self.path)
         self.version = version_from_dict(config_dict)
 
@@ -53,15 +56,24 @@ class Config:
             keys for parts compared to the `version` param.
         """
         try:
+            log.info(f'Saving config file {self.path}')
             self._save_version_values()
         except KeyError as key_error:
             key = key_error.args[0]
             raise ConfigError(
                 f'You must have the required attribute `{key}` configured')
 
+    def update_files(self, old_version: str, new_version: str):
+        """Update any configured files with the version."""
+        for file_updater in self.files:
+            file_updater.update(old_version, new_version)
+
     def _save_version_values(self):
         """Update config file part based on `version` object."""
+        log.debug(f'Getting value update map for path {self.path}')
         update_map = self._get_value_update_map()
+        log.debug(f'Update map for {self.path}:')
+        log.debug(f'{update_map}')
 
         with open(self.path, 'r') as file:
             lines = file.readlines()
@@ -69,8 +81,13 @@ class Config:
         with open(self.path, 'w') as file:
             for index, value in update_map.items():
                 indent_length = len(lines[index]) - len(lines[index].lstrip())
-                lines[index] = f'{" " * indent_length}value: {value}\n'
+                updated = f'{" " * indent_length}value: {value}\n'
+                log.debug(f'For line {index + 1}')
+                log.debug(f'Old:\n{lines[index]}')
+                log.debug(f'New:\n{updated}')
+                lines[index] = updated
 
+            log.debug(f'Writing changes')
             file.writelines(lines)
 
     def _get_value_update_map(self) -> dict[int, str]:
@@ -88,6 +105,7 @@ class Config:
             lines = file.readlines()
 
             for key in config_dict['parts'].keys():
+                log.debug(f'Getting value index for part <{key}>')
                 # We want to start at the part's key so that the next
                 # `value` node is guaranteed to be the part's `value` node.
                 from_index = config_dict['parts'][key].lc.line
@@ -100,6 +118,9 @@ class Config:
                     update_map[line_index] = 'null'
                 else:
                     update_map[line_index] = part.value
+
+                log.debug(f'Part <{key}> value index is <{line_index}> with '
+                          f'value <{update_map[line_index]}>')
 
         return update_map
 
@@ -114,6 +135,7 @@ def dict_from_yaml(path: str) -> dict:
     :raise FileNotFoundError: If the file does not exist.
     :raise OSError: For other errors when accessing the file.
     """
+    log.debug(f'Getting dict from yaml {path}')
     with open(path, 'r') as file:
         yaml = ruamel.yaml.YAML()
         config_dict = yaml.load(file)
@@ -160,6 +182,7 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
     :raise KeyError: If the config is missing required attributes.
     :return: The version part.
     """
+    log.debug(f'Parsing config part <{key}>')
     if config_dict.get('identifier') and config_dict.get('number'):
         raise ConfigError(
             f'Part `{key}` cannot be an identifier and number at the '
@@ -193,9 +216,16 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
 
 
 def files_from_dict(config_dict: dict) -> list[FileUpdater]:
+    """Get the `files` attribute from a config dict.
+
+    :param config_dict: The dict with raw part config data.
+    :raise ConfigError: If the configuration dict is invalid.
+    :return: FileUpdater objects based on the `files` attribute.
+    """
     try:
         file_updaters: list[FileUpdater] = []
         for file_config in config_dict.get('files', []):
+            log.debug(f'Parsing config `files` path <{file_config["path"]}>')
             file_updaters.append(FileUpdater(
                 path=file_config['path'],
                 patterns=file_config.get('patterns')

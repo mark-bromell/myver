@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from logging import getLogger
+
 from myver.error import ConfigError, BumpError
 from myver.part import Part
+
+log = getLogger(__name__)
 
 
 class Version:
@@ -41,6 +45,7 @@ class Version:
             key value pair with the syntax of `<key>=<value>`.
         :raise BumpError: When the bumping fails.
         """
+        log.debug('Starting version bump')
         for arg in args:
             if arg.count('=') > 1:
                 raise BumpError(
@@ -60,6 +65,7 @@ class Version:
         :raise KeyError: If a key in the `keys` list does not reference
             a valid part in the version.
         """
+        log.debug('Starting version reset')
         for key in keys:
             self.part(key).reset()
 

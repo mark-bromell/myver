@@ -44,7 +44,12 @@ jobs:
         run: python -m build
 
       - name: Verify build
-        run: twine check dist/*
+        run: |
+          twine check dist/*
+          mkdir tmp/
+          cd tmp/
+          python -m pip install ..
+          python -m myver -h
 
       - name: Test
         run: |
