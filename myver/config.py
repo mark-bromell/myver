@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
+from typing import List, Dict
 
 import ruamel.yaml
 
@@ -15,10 +16,10 @@ log = getLogger(__name__)
 class Config:
     def __init__(self,
                  path: str = None,
-                 files: list[FileUpdater] = None,
+                 files: List[FileUpdater] = None,
                  version: Version = None):
         self.path: str = path
-        self.files: list[FileUpdater] = files
+        self.files: List[FileUpdater] = files
         self.version: Version = version
         if path and not (files or version):
             self.load()
@@ -90,7 +91,7 @@ class Config:
             log.debug(f'Writing changes')
             file.writelines(lines)
 
-    def _get_value_update_map(self) -> dict[int, str]:
+    def _get_value_update_map(self) -> Dict[int, str]:
         """Get an update map for version values in a config file.
 
         :return: A dict with each key in the dict represents the index
@@ -125,7 +126,7 @@ class Config:
         return update_map
 
 
-def dict_from_yaml(path: str) -> dict:
+def dict_from_yaml(path: str) -> Dict:
     """Gets the dict config from a file.
 
     The default file path is `myver.yml`, which is a relative path. This
@@ -142,7 +143,7 @@ def dict_from_yaml(path: str) -> dict:
     return config_dict
 
 
-def find_value_node_index(lines: list[str], from_index: int) -> int:
+def find_value_node_index(lines: List[str], from_index: int) -> int:
     """Find the line index for the `value` node.
 
     :param lines: The lines to read from in order to get the index.
@@ -154,7 +155,7 @@ def find_value_node_index(lines: list[str], from_index: int) -> int:
             return i + from_index
 
 
-def version_from_dict(config_dict: dict) -> Version:
+def version_from_dict(config_dict: Dict) -> Version:
     """Construct version from a config dict.
 
     :param config_dict: The dict with raw version config data.
@@ -162,7 +163,7 @@ def version_from_dict(config_dict: dict) -> Version:
     :return: The version.
     """
     try:
-        parts: list[Part] = []
+        parts: List[Part] = []
         for part_key, part_dict in config_dict['parts'].items():
             parts.append(part_from_dict(part_key, part_dict))
         return Version(parts)
@@ -173,7 +174,7 @@ def version_from_dict(config_dict: dict) -> Version:
             f'`parts`')
 
 
-def part_from_dict(key: str, config_dict: dict) -> Part:
+def part_from_dict(key: str, config_dict: Dict) -> Part:
     """Construct part from a config dict.
 
     :param key: The part's key.
@@ -215,7 +216,7 @@ def part_from_dict(key: str, config_dict: dict) -> Part:
             prefix=config_dict.get('prefix'))
 
 
-def files_from_dict(config_dict: dict) -> list[FileUpdater]:
+def files_from_dict(config_dict: Dict) -> List[FileUpdater]:
     """Get the `files` attribute from a config dict.
 
     :param config_dict: The dict with raw part config data.
@@ -223,7 +224,7 @@ def files_from_dict(config_dict: dict) -> list[FileUpdater]:
     :return: FileUpdater objects based on the `files` attribute.
     """
     try:
-        file_updaters: list[FileUpdater] = []
+        file_updaters: List[FileUpdater] = []
         for file_config in config_dict.get('files', []):
             log.debug(f'Parsing config `files` path <{file_config["path"]}>')
             file_updaters.append(FileUpdater(

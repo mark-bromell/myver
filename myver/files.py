@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from glob import glob
 from logging import getLogger
+from typing import List
 
 from jinja2 import Template
 
@@ -17,9 +18,9 @@ class FileUpdater:
 
     def __init__(self,
                  path: str,
-                 patterns: list[str] = None):
+                 patterns: List[str] = None):
         self.path: str = path
-        self.patterns: list[str] = patterns or ['{{ version }}']
+        self.patterns: List[str] = patterns or ['{{ version }}']
 
     def update(self, old_version: str, new_version: str):
         log.debug(f'Doing update for glob <{self.path}>')
@@ -39,7 +40,7 @@ class FileUpdater:
     def _update_data(self, data: str, old_version: str,
                      new_version: str) -> str:
         rendered_patterns = self._rendered_patterns(old_version)
-        update_pairs: list[UpdatePair] = []
+        update_pairs: List[UpdatePair] = []
         updated_data = data
 
         for pattern in rendered_patterns:
@@ -55,7 +56,7 @@ class FileUpdater:
 
         return updated_data
 
-    def _rendered_patterns(self, version: str) -> list[str]:
+    def _rendered_patterns(self, version: str) -> List[str]:
         rendered_patterns = []
 
         for pattern in self.patterns:

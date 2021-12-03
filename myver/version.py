@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
+from typing import List
 
 from myver.error import ConfigError, BumpError
 from myver.part import Part
@@ -14,34 +15,34 @@ class Version:
     This is the top level class for a version. It contains the groups
     of parts and this is where the version operations are performed.
 
-    :param parts: The list of parts in the version.
+    :param parts: The List of parts in the version.
     """
 
-    def __init__(self, parts: list[Part] = None):
-        self._parts: list[Part] = parts or list()
-        self.parts = parts or list()
+    def __init__(self, parts: List[Part] = None):
+        self._parts: List[Part] = parts or []
+        self.parts = parts or []
 
     @property
-    def parts(self) -> list[Part]:
+    def parts(self) -> List[Part]:
         return self._parts
 
     @parts.setter
-    def parts(self, new_parts: list[Part]):
-        """Sets the parts list.
+    def parts(self, new_parts: List[Part]):
+        """Sets the parts List.
 
         :param new_parts: The parts to set.
         :raise KeyConflictError: A part key appears 2 or more times in
-            the list.
+            the List.
         """
         validate_keys(new_parts)
         validate_requires(new_parts)
         self._parts = new_parts
         set_relationships(self._parts)
 
-    def bump(self, args: list[str]):
+    def bump(self, args: List[str]):
         """Bump the version based on bumping args.
 
-        :param args: The list of part keys to bump. An arg may have a
+        :param args: The List of part keys to bump. An arg may have a
             key value pair with the syntax of `<key>=<value>`.
         :raise BumpError: When the bumping fails.
         """
@@ -58,11 +59,11 @@ class Version:
             else:
                 self.part(arg).bump(args)
 
-    def reset(self, keys: list[str]):
+    def reset(self, keys: List[str]):
         """Reset parts based on their keys.
 
         :param keys: The keys of the parts to reset.
-        :raise KeyError: If a key in the `keys` list does not reference
+        :raise KeyError: If a key in the `keys` List does not reference
             a valid part in the version.
         """
         log.debug('Starting version reset')
@@ -96,7 +97,7 @@ class Version:
         return version_str
 
 
-def validate_requires(parts: list[Part]):
+def validate_requires(parts: List[Part]):
     """Validates that parts require other valid parts.
 
     :raise ConfigError: If a part requires itself or a part that does
@@ -118,7 +119,7 @@ def validate_requires(parts: list[Part]):
                 f'valid key of another part')
 
 
-def validate_keys(parts: list[Part]):
+def validate_keys(parts: List[Part]):
     """Validates that they keys are unique.
 
     :raise ConfigError: If two or more parts with the same key.
@@ -131,8 +132,8 @@ def validate_keys(parts: list[Part]):
                 f'parts must have a unique key')
 
 
-def set_relationships(parts: list[Part]):
-    """Sets the parent-child relationships between a list of parts.
+def set_relationships(parts: List[Part]):
+    """Sets the parent-child relationships between a List of parts.
 
     :param parts: The parts to set the relationships for.
     """
