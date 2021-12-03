@@ -56,6 +56,7 @@ def _parse_args(args):
         prog='myver',
         add_help=False,
     )
+    parser.register('action', 'extend', ExtendAction)
     parser.add_argument(
         '-h', '--help',
         action='store_true',
@@ -92,3 +93,10 @@ def _parse_args(args):
         action='store_true',
     )
     return parser.parse_args(args)
+
+
+class ExtendAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest) or []
+        items.extend(values)
+        setattr(namespace, self.dest, items)
