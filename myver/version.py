@@ -81,6 +81,32 @@ class Version:
                 return part
         raise KeyError(key)
 
+    def parse(self, keys: List[str]):
+        """Parses specific parts in the version.
+
+        Lets say you parse the keys `['a', 'z']`, if `z` is not a null
+        value, then all parts in between `a` and `z` will also be
+        parsed, such as `b`, `c`, `d` etc... If `z` is null then only
+        `a` will be parsed, and not their intermediary parts.
+
+        :param keys: The keys of the parts to parse. They must be in
+            chronological order from how they are configured.
+        :raise KeyError: If an invalid part key is provided.
+        """
+        end_key = ''
+        for key in keys:
+            if self.part(key).is_set():
+                end_key = key
+
+        parsed = ''
+        for part in self._parts:
+            if part.is_set():
+                parsed += str(part)
+            if part.key == end_key:
+                break
+
+        return parsed
+
     def __eq__(self, other: Version):
         for this_part, other_part in zip(self.parts, other.parts):
             if not this_part == other_part:

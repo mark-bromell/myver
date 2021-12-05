@@ -3,6 +3,7 @@ import logging
 import textwrap
 
 from myver.config import Config
+from myver.error import MyverError
 
 
 def cli_entry(input_args=None):
@@ -11,39 +12,70 @@ def cli_entry(input_args=None):
 
     if args.help:
         print(textwrap.dedent('''\
-        usage: myver [-h] [-c] [-b ARG [...]] [-r PART [...]] [--config PATH]
-
+        Usage: myver [OPTIONS]
+        
+        Options:
           -h, --help               Show this help message and exit
-          -b, --bump ARG [...]     Bump version parts
-          --config PATH            Config file path
-          -c, --current            Get the current version
-          -r, --reset PART [...]   Reset version parts
+          -b, --bump strings       Bump version parts
+              --config string      Config file path
+          -c, --current [strings]  Get the current version or version parts
+          -r, --reset strings      Reset version parts
           -v, --verbose            Log more details
         ''').rstrip())
         return
 
+    # Running these before setting up config so that all logging can
+    # be captured effectively.
+    _handle_verbose(args)
+    _handle_debug(args)
+
+    config = Config(args.config)
+
+    # Most things after here will need the config.
+    _handle_current(args, config)
+    _handle_bump(args, config)
+    _handle_reset(args, config)
+
+
+def _handle_verbose(args):
     if args.verbose:
         logging.root.setLevel(logging.INFO)
+
+
+def _handle_debug(args):
     if args.debug:
         logging.root.handlers[0].setFormatter(
             logging.Formatter('[%(levelname)s] [%(module)s] %(message)s')
         )
         logging.root.setLevel(logging.DEBUG)
 
-    config = Config(args.config)
 
-    if args.current:
+def _handle_current(args, config: Config):
+    if args.current is None:
+        return
+
+    if len(args.current) == 0:
         print(config.version)
-    if args.bump:
+    else:
+        try:
+            print(config.version.parse(args.current))
+        except KeyError as key_error:
+            raise MyverError(f'Failed to parse --current option, contains '
+                             f'invalid part key `{key_error.args[0]}`')
+
+
+def _handle_bump(args, config: Config):
+    _do_update(config.version.bump, args.bump, config)
+
+
+def _handle_reset(args, config: Config):
+    _do_update(config.version.reset, args.reset, config)
+
+
+def _do_update(func, arg, config: Config):
+    if arg:
         old_version_str = str(config.version)
-        config.version.bump(args.bump)
-        new_version_str = str(config.version)
-        config.save()
-        config.update_files(old_version_str, new_version_str)
-        print(f'{old_version_str}  >>  {new_version_str}')
-    if args.reset:
-        old_version_str = str(config.version)
-        config.version.reset(args.reset)
+        func(arg)
         new_version_str = str(config.version)
         config.save()
         config.update_files(old_version_str, new_version_str)
@@ -73,7 +105,9 @@ def _parse_args(args):
     )
     parser.add_argument(
         '-c', '--current',
-        action='store_true',
+        action='extend',
+        nargs='*',
+        type=str,
     )
     parser.add_argument(
         '-r', '--reset',

@@ -57,6 +57,12 @@ def test_version_str(semver):
     assert str(semver) == '3.9.2-alpha.1'
 
 
+def test_parse(semver):
+    assert semver.parse(['major', 'minor', 'prenum']) == '3.9.2-alpha.1'
+    semver.bump(['patch'])
+    assert semver.parse(['major', 'minor', 'prenum']) == '3.9'
+
+
 @pytest.mark.parametrize('args, version_str', [
     (['prenum'], '3.9.2-alpha.2'),
     (['minor'], '3.10.0'),

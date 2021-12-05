@@ -56,13 +56,14 @@ pip install myver
 # Usage
 
 ```
-usage: myver [-h] [-c] [-b ARG [...]] [-r PART [...]] [--config PATH]
+Usage: myver [OPTIONS]
 
+Options:
   -h, --help               Show this help message and exit
-  -b, --bump ARG [...]     Bump version parts
-  --config PATH            Config file path
-  -c, --current            Get the current version
-  -r, --reset PART [...]   Reset version parts
+  -b, --bump strings       Bump version parts
+      --config string      Config file path
+  -c, --current [strings]  Get the current version or version parts
+  -r, --reset strings      Reset version parts
   -v, --verbose            Log more details
 ```
 
@@ -395,22 +396,65 @@ below each snippet.
 
 ### Standard bumping scenarios
 
-```shell
-myver --current
-> 3.8.2
-myver --bump patch
-> 3.8.3
-myver --bump minor
-> 3.9.0
 ```
+➜ myver --current
+3.8.2
+
+➜ myver --bump patch
+3.8.2  >>  3.8.3
+
+➜ myver --bump minor
+3.8.3  >>  3.9.0
+```
+
+### Custom parsing of the version
+
+```
+➜ myver --current
+3.8.2
+
+➜ myver --current major minor
+3.8
+```
+
+Sometimes you may want to parse the version with specific parts only.
+There are many case by case reasons for this, but one case is to use
+this for docker image tagging. In the example above if we do not specify
+what parts to parse then the whole version is parsed. Although we can
+specify the parts to parse as seen above with `major` and `minor` being
+parsed in the second command, resulting in `3.8`.
+
+```
+➜ myver --current major minor prenum
+3.8
+
+➜ myver --bump pre
+3.8.2  >>  3.8.2-alpha.1
+
+➜ myver --current major minor prenum
+3.8.2-alpha.1
+```
+
+We can also include a part that may not be set. In the example above
+we include `prenum` part to be parsed, although it is not set which
+means it is ignored, so the remaining parts that are specified **and**
+set will be parsed.
+
+After setting the `prenum` value though, running the same command will
+result in parsing every part that is set between `minor` and `prenum`.
+While our command only specifies `major`, `minor` and `prenum`, it does
+not mean to only parse these values, think of them as ranges instead,
+so we are parsing `major` **to** `minor`, and then `minor` **to**
+`prenum`.
 
 ### Bumping with non-required child
 
-```shell
-myver --current
-> 3.8.2
-myver --bump patch dev
-> 3.8.3+dev
+```
+➜ myver --current
+3.8.2
+
+➜ myver --bump patch dev
+3.8.2  >>  3.8.3+dev
 ```
 
 In this example we show how the part ordering matters in the config. We
@@ -418,11 +462,12 @@ can see that the `dev` part is configured after the `patch` part, and
 the `patch` part does not require any other part. This means that `dev`
 is a valid child for the `patch` part.
 
-```shell
-myver --current
-> 3.8.3+dev
-myver --bump patch
-> 3.8.4
+```
+➜ myver --current
+3.8.3+dev
+
+➜ myver --bump patch
+3.8.3+dev  >>  3.8.4
 ```
 
 It is also important to keep in mind that non-required child parts will
@@ -433,11 +478,12 @@ we would have to be more explicit and use `myver --bump patch dev`.
 
 ### Part with a required child
 
-```shell
-myver --current
-> 3.8.2
-myver --bump patch pre
-> 3.8.3-alpha.1
+```
+➜ myver --current
+3.8.2
+
+➜ myver --bump patch pre
+3.8.2  >>  3.8.3-alpha.1
 ```
 
 We see that specifying `pre` to be brought along with the bump of
@@ -453,13 +499,15 @@ the start value is `0` by default.
 
 ### Value overriding
 
-```shell
-myver --current
-> 3.8.2
-myver --bump minor pre=beta
-> 3.9.0-beta.1
-myver --bump patch=5
-> 3.9.5
+```
+➜ myver --current
+3.8.2
+
+➜ myver --bump minor pre=beta
+3.8.2  >>  3.9.0-beta.1
+
+➜ myver --bump patch=5
+3.9.0-beta.1  >>  3.9.5
 ```
 
 Sometimes you may not want to use the start value of a string part. Here
@@ -478,11 +526,12 @@ must be an integer.
 
 ### Resetting optional part
 
-```shell
-myver --current
-> 3.9.0-beta.1+build.34
-myver --reset pre
-> 3.9.0
+```
+➜ myver --current
+3.9.0-beta.1+build.34
+
+➜ myver --reset pre
+3.9.0-beta.1+build.34  >>  3.9.0
 ```
 
 You may want to remove a part, this can easily be done with the
@@ -490,11 +539,13 @@ You may want to remove a part, this can easily be done with the
 optional part will also reset its descendants. Although we can keep a
 descendant if we use `--bump`.
 
-```shell
-myver --current
-> 3.9.0-beta.1+build.34
-myver --reset pre --bump build
-> 3.9.0+build.1
+```
+➜ myver --current
+3.9.0-beta.1+build.34
+
+➜ myver --reset pre --bump build
+3.9.0-beta.1+build.34  >>  3.9.0
+3.9.0  >>  3.9.0+build.1
 ```
 
 ### Implicit children
@@ -506,12 +557,12 @@ their use cases which may be acting weird due to this feature. So you do
 not have to understand this section to make use of implicit children, it
 should hopefully come to you naturally.
 
-```shell
-myver --current
-> 3.8.2+build.1
-# Reads as: bump patch, with pre, with dev
-myver --bump dev
-> 3.8.2+build.1-dev
+```
+➜ myver --current
+3.8.2+build.1
+
+➜ myver --bump dev
+3.8.2+build.1  >>  3.8.2+build.1-dev
 ```
 
 This is the clearest example of implicit children, in the config we do
@@ -522,24 +573,24 @@ This is due to the order of the parts in the config, and also due to
 place to put the `dev` part is after the last part that has a value,
 which in this case is `buildnum`.
 
-```shell
-myver --current
-> 3.8.2+build.1-dev
-# Reads as: bump patch, with pre, with dev
-myver --bump buildnum
-> 3.8.2+build.2
+```
+➜ myver --current
+3.8.2+build.1-dev
+
+➜ myver --bump buildnum
+3.8.2+build.1-dev  >>  3.8.2+build.2
 ```
 
 Also keep in mind that implicit children will be removed if their parent
 is bumped. In the above example if you wanted to keep `dev` you need to
 be explicit and use `myver --bump buildnum dev`
 
-```shell
-myver --current
-> 3.8.2
-# Reads as: bump patch, with pre, with dev
-myver --bump patch pre dev
-> 3.8.3-alpha.1+dev
+```
+➜ myver --current
+3.8.2
+
+➜ myver --bump patch pre dev
+3.8.2  >>  3.8.3-alpha.1+dev
 ```
 
 When bumping `patch` with `pre`, the `pre` will bring along its `prenum`
@@ -553,12 +604,12 @@ defined in the config, so it takes precedence.
 So why are we allowed to ignore the `build` part? It's because
 the `build` part is not required by any other part that is current set.
 
-```shell
-myver --current
-> 3.8.3-alpha.1+dev
-# Reads as: bump build
-myver --bump build
-> 3.8.3-alpha.1+build.1
+```
+➜ myver --current
+3.8.3-alpha.1+dev
+
+➜ myver --bump build
+3.8.3-alpha.1+dev  >>  3.8.3-alpha.1+build.1
 ```
 
 Why did the `dev` part get removed in this case? This is because of the
