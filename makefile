@@ -28,6 +28,6 @@ test:
 	python -m pytest -vv -rfEs ./tests/
 
 coverage: clean-coverage
-	coverage run --branch --source=myver/ -m pytest -v -rfEs tests/
+	coverage run --branch --source=myver/ -m pytest -vv -rfEs tests/
 	coverage html -d htmlcov/
 	coverage report

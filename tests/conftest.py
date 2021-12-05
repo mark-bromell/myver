@@ -7,14 +7,14 @@ import pytest
 @pytest.fixture
 def sample_config(tmp_path) -> Path:
     path = tmp_path / 'sample.yml'
-    config = textwrap.dedent("""\
+    config = textwrap.dedent(f"""\
         # line comment
         files:
-            - path: 'setup.py'
-            - path: 'my/path/*.md'
+            - path: '{tmp_path.absolute()}/setup.py'
+            - path: '{tmp_path.absolute()}/my/path/*.md'
               patterns:
-                - 'MyVer {{ version }}'
-                - 'Something.*{{ version }}'
+                - 'MyVer {{{{ version }}}}'
+                - 'Something.*{{{{ version }}}}'
             
         parts:
             core:

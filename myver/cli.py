@@ -1,22 +1,13 @@
 import argparse
 import logging
-import sys
 import textwrap
 
 from myver.config import Config
 
 
-def main(input_args=None):
+def cli_entry(input_args=None):
     """Entry point for the command line utility."""
     args = _parse_args(input_args)
-
-    if args.verbose:
-        logging.root.setLevel(logging.INFO)
-    if args.debug:
-        logging.root.handlers[0].setFormatter(
-            logging.Formatter('[%(levelname)s] [%(module)s] %(message)s')
-        )
-        logging.root.setLevel(logging.DEBUG)
 
     if args.help:
         print(textwrap.dedent('''\
@@ -28,8 +19,16 @@ def main(input_args=None):
           -c, --current            Get the current version
           -r, --reset PART [...]   Reset version parts
           -v, --verbose            Log more details
-        '''))
-        sys.exit(0)
+        ''').rstrip())
+        return
+
+    if args.verbose:
+        logging.root.setLevel(logging.INFO)
+    if args.debug:
+        logging.root.handlers[0].setFormatter(
+            logging.Formatter('[%(levelname)s] [%(module)s] %(message)s')
+        )
+        logging.root.setLevel(logging.DEBUG)
 
     config = Config(args.config)
 
