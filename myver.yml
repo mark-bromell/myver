@@ -1,0 +1,28 @@
+files:
+  - path: 'setup.py'
+    patterns: [ "version='{{ version }}'" ]
+
+parts:
+  major:
+    value: 1
+    requires: minor
+
+  minor:
+    value: 1
+    prefix: '.'
+    requires: micro
+
+  micro:
+    value: 0
+    prefix: '.'
+
+  pre:
+    value: null
+    requires: prenum
+    identifier:
+      strings: [ 'pre', 'rc' ]
+
+  prenum:
+    value: null
+    number:
+      start: 1

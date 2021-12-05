@@ -10,7 +10,6 @@
 files:
   - path: 'version.txt'
     # patterns: [ '{{ version }}' ]
-    # ignores: null
 
 parts:
   major:

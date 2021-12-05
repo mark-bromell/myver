@@ -2,18 +2,18 @@ import logging
 import sys
 from logging import getLogger
 
-from myver.cli import main
+from myver.cli import cli_entry
 from myver.error import MyverError
 
 
-if __name__ == '__main__':
+def main():
     logging.basicConfig(
         format='[%(levelname)s] %(message)s',
         level=logging.WARNING
     )
     log = getLogger(__name__)
     try:
-        main()
+        cli_entry()
     except KeyboardInterrupt:
         sys.exit(1)
     except MyverError as e:
@@ -23,3 +23,6 @@ if __name__ == '__main__':
         log.error('MyVer failed', exc_info=e)
         sys.exit(1)
 
+
+if __name__ == '__main__':
+    main()

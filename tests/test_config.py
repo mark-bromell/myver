@@ -153,12 +153,12 @@ def test_dict_from_yaml(sample_config):
     assert config_dict['parts']['prenum']['number']
 
 
-def test_config_load(sample_config):
+def test_config_load(tmp_path, sample_config):
     config = Config()
     config.path = str(sample_config.absolute())
     files = [
-        FileUpdater(path='setup.py'),
-        FileUpdater(path='my/path/*.md', patterns=[
+        FileUpdater(path=f'{tmp_path.absolute()}/setup.py'),
+        FileUpdater(path=f'{tmp_path.absolute()}/my/path/*.md', patterns=[
             'MyVer {{ version }}',
             'Something.*{{ version }}',
         ])
@@ -173,11 +173,11 @@ def test_config_load(sample_config):
     assert config.version == version
 
 
-def test_config_load_in_init(sample_config):
+def test_config_load_in_init(tmp_path, sample_config):
     config = Config(path=str(sample_config.absolute()))
     files = [
-        FileUpdater(path='setup.py'),
-        FileUpdater(path='my/path/*.md', patterns=[
+        FileUpdater(path=f'{tmp_path.absolute()}/setup.py'),
+        FileUpdater(path=f'{tmp_path.absolute()}/my/path/*.md', patterns=[
             'MyVer {{ version }}',
             'Something.*{{ version }}',
         ])
@@ -234,18 +234,18 @@ def test_config_save(sample_config):
     assert version == loaded.version
 
 
-def test_config_save_preserve_formatting(sample_config):
+def test_config_save_preserve_formatting(tmp_path, sample_config):
     config = Config(str(sample_config.absolute()))
     config.save()
     with open(sample_config, 'r') as file:
-        assert file.read() == textwrap.dedent("""\
+        assert file.read() == textwrap.dedent(f"""\
             # line comment
             files:
-                - path: 'setup.py'
-                - path: 'my/path/*.md'
+                - path: '{tmp_path.absolute()}/setup.py'
+                - path: '{tmp_path.absolute()}/my/path/*.md'
                   patterns:
-                    - 'MyVer {{ version }}'
-                    - 'Something.*{{ version }}'
+                    - 'MyVer {{{{ version }}}}'
+                    - 'Something.*{{{{ version }}}}'
             
             parts:
                 core:
@@ -302,3 +302,16 @@ def test_files_from_dict_missing_requires_attribute():
                 'patterns': ['pattern {{ version }}', 'another {{ version }}']
             }
         ]})
+
+
+def test_update_files(tmp_path, sample_config):
+    with open(tmp_path / 'setup.py', 'w') as file:
+        file.write('1')
+
+    config = Config(
+        path=str(sample_config.absolute()),
+    )
+    config.update_files('1', '2.2')
+
+    with open(tmp_path / 'setup.py', 'r') as file:
+        assert file.readlines()[0] == '2.2'

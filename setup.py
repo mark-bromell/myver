@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name='myver',
-    version='1.0.0',
+    version='1.1.0',
     author='Mark Bromell',
     author_email='markbromell.business@gmail.com',
     description='Development tool for configuring and altering software '
